@@ -1,0 +1,36 @@
+body {
+    margin-top: 0;
+    margin-left: 14px;
+}
+
+h3 {
+    margin-left: -18px;
+}
+
+select, input[type=text] {
+    width: 160px;
+}
+
+input[type=checkbox] {
+    margin-top: -4px;
+    margin-right: 8px;
+}
+
+table {
+    border-spacing: 0;
+    margin-left: 21px;
+}
+
+tbody::after {
+    content: '';
+    display: block;
+    height: 10px;
+}
+
+tr {
+    height: 28px;
+}
+
+td:nth-child(2) {
+    padding-left: 10px;
+}
