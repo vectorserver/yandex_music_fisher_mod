@@ -8,5 +8,5 @@
 * Включаем "Режим разработчика"
 * Нажимаем на "Загрузить распакованное расширение" и выбираем путь до паки **2.1.129**
   
-**Видео инстркуция для нагладности:** [install.wmv](https://github.com/vectorserver/yandex_music_fisher_mod/raw/master/install.wmv)
+**Видео инстркуция для наглядности:** [install.wmv](https://github.com/vectorserver/yandex_music_fisher_mod/raw/master/install.wmv)
 
