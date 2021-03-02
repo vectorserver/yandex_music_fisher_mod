@@ -1,0 +1,129 @@
+body {
+    font-size: 12px;
+}
+
+label {
+    font-weight: normal;
+}
+
+input[type=checkbox] {
+    margin-right: 5px;
+}
+
+h4.albums, h4.compilations {
+    margin-bottom: 18px;
+    margin-left: 10px;
+}
+
+.container {
+    width: 36em;
+    padding: 15px;
+}
+
+.btn, .btn:active, .btn:hover {
+    outline: none !important;
+}
+
+.btn-xs {
+    padding: 0 5px 0;
+    font-size: 11px;
+}
+
+.panel {
+    border: none;
+}
+
+.panel-heading {
+    padding: 3px 10px;
+}
+
+.panel-body {
+    padding: 5px 10px;
+}
+
+.btn-toolbar {
+    margin-left: 0;
+    margin-bottom: 20px;
+}
+
+.alert {
+    margin-bottom: 0;
+}
+
+.label {
+    font-size: 11px;
+}
+
+.label-year {
+    margin-left: 18px;
+    font-weight: bold;
+    cursor: default;
+    font-size: 14px;
+}
+
+.text-container {
+    text-align: left;
+}
+
+.artist-container, .download-container {
+    text-align: center;
+}
+
+.download-container {
+    margin-top: 18px;
+}
+
+#preloader > img {
+    display: block;
+    margin: 25px auto;
+}
+
+#compilations, #albums {
+    margin-top: 50px;
+}
+
+#numOfTopTracks {
+    width: 45px;
+}
+
+.panel-albums .media,
+.panel-compilations .media {
+    margin: 9px 0;
+}
+
+.panel-albums .panel-body,
+.panel-compilations .panel-body {
+    padding: 5px 0 0 0;
+}
+
+.panel-albums .panel-body label,
+.panel-compilations .panel-body label {
+    padding: 0 10px;
+}
+
+.panel-albums .panel-body label:hover,
+.panel-compilations .panel-body label:hover {
+    background-color: #F5F5F5;
+}
+
+.panel-compilations {
+    margin-top: 18px;
+}
+
+input[type=checkbox].media-checkbox {
+    display: block;
+    float: left;
+    margin-top: 21px;
+    margin-right: 11px;
+}
+
+button.remove-btn,
+button.restore-btn {
+    display: block;
+    float: right;
+    margin-left: 5px;
+}
+
+.pivas{
+    margin-bottom: 15px;
+}
