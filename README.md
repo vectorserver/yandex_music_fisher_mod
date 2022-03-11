@@ -3,7 +3,8 @@
 
 **Пакеты:**
 * Opera [Beta & developer](https://www.opera.com/ru/computer/beta): [link](https://addons.opera.com/ru/extensions/details/yandex-music-fisher-mod/)
-* Firefox: [link](https://addons.mozilla.org/ru/firefox/addon/yandex-music-vectorserver/)
+* Firefox XPI: [link](https://github.com/vectorserver/yandex_music_fisher_mod/raw/master/2.1.150%20_moz.xpi)
++ Open tab: about:debugging#/runtime/this-firefox
 * Microsoft EDGE: [link](https://microsoftedge.microsoft.com/addons/detail/yandex-music-fisher-vecto/hpikmohamcoejcfekplfhfodcifbammm)
 
 
