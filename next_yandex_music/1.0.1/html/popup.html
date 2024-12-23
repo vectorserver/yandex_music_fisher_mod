@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=500">
+    <title>NEXT Yandex Music Fisher mod by vectorserver</title>
+    <!-- Bootstrap CSS -->
+    <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div style="width:500px;max-width: 500px;padding: 15px 15px 0px 15px;margin: 0px" class="container-fluid">
+    <div style="display: none;" id="authorization">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="panel text-center">
+                    <h1>NEXT Yandex Music Fisher</h1>
+                    <p>Для использования приложения нужна авторизация для доступа к методам Яндекс Музыки.</p>
+                    <a target="_blank" href="#" class="btn btn-primary" id="authorize">Авторизация</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="display: none;" id="work_panel">
+        <div class="row">
+            <div class="col-5">
+                <strong>Текущий трек</strong>
+                <div id="trackPanel" class="card" style="width: 100%;">
+                    <img id="trackImage" src="../icons/music_by_pancaza.png" class="card-img-top" alt="Track Image">
+                    <div class="card-body">
+                        <h5 id="trackName" class="text-center">Track Info</h5>
+                        <p id="artistsList" class="text-center text-muted">No track information available</p>
+                        <div class="d-grid gap-2">
+                            <a id="downloadButton" href="#" class="btn btn-dark  btn-sm">Скачать</a>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="col-7">
+                <div id="playlistPanel" style="width: 100%;">
+                    <h5 id="title"></h5>
+                    <img id="playlistImage" src="../icons/music_by_pancaza.png" class="card-img-top" alt="Track Image">
+                    <pre id="meta"></pre>
+                    <a id="downloadButtonPl" style="display: none" href="#" class="btn btn-dark  btn-sm">...</a>
+                </div>
+            </div>
+            <div class="col-12">
+                <hr>
+                <p>by <a target="_blank" href="https://vk.com/vectorserver">Vectorserver</a> / donat: <a
+                        class="btn btn-danger btn-sm" target="_blank" href="https://yoomoney.ru/to/410011249842897">yoomoney</a></p>
+
+            </div>
+        </div>
+    </div>
+
+
+    <pre id="dataContainer"></pre>
+</div>
+<!-- Bootstrap JS Bundle (Optional, for advanced Bootstrap functionality) -->
+<script src="../html/bs5/browser-id3-writer.6.0.0.mjs"></script>
+
+<script src="../html/bs5/bootstrap.bundle.min.js"></script>
+<script src="../js/parser.js" defer></script>
+<script src="../js/popup.js" defer></script>
+</body>
+</html>

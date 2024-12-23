@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "NEXT Yandex Music Fisher vectorserver",
+  "version": "1.0.1",
+  "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
+  "icons": {
+    "128": "icons/music_by_pancaza.png"
+  },
+  "action": {
+    "default_icon": "icons/music_by_pancaza.png",
+    "default_popup": "html/popup.html",
+    "default_title": "NEXT Yandex Music Fisher mod by vectorserver"
+  },
+  "background": {
+    "service_worker": "js/service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://api.music.yandex.ru/*",
+        "https://next.music.yandex.com/*",
+        "https://next.music.yandex.ru/*",
+        "https://next.music.yandex.kz/*",
+        "https://next.music.yandex.by/*",
+        "https://next.music.yandex.uz/*",
+        "https://*.strm.yandex.net/*",
+        "https://music.yandex.ru/*",
+        "https://music.yandex.com/*",
+        "https://music.yandex.kz/*",
+        "https://music.yandex.by/*",
+        "https://music.yandex.uz/*",
+        "https://yastatic.net/*"
+      ],
+      "js": ["js/content.js"]
+    }
+  ],
+  "permissions": [
+    "tabs",
+    "downloads",
+    "webRequest",
+    "scripting",
+    "activeTab",
+    "scripting",
+    "webRequest",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.music.yandex.ru/*"
+  ],
+  "incognito": "split",
+  "options_page": "html/options.html",
+  "homepage_url": "https://vk.com/vectorserver",
+  "update_url": "https://extension-updates.opera.com/api/omaha/update/"
+}
