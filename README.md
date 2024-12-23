@@ -1,4 +1,9 @@
 Плагин для скачивания музыки с сервиса https://music.yandex.ru/
+
+NEW TEST: https://github.com/vectorserver/yandex_music_fisher_mod/tree/master/next_yandex_music/1.0.1
+
+
+OLD
 Расширение для браузеров Opera, Firefox, Microsoft EDGE
 
 **Пакеты:**
