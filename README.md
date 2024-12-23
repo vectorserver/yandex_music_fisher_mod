@@ -10,7 +10,7 @@ NEW TEST: https://github.com/vectorserver/yandex_music_fisher_mod/tree/master/ne
 #### Шаг 1: Скачивание репозитория
 
 1. Перейдите на страницу репозитория:
-   [[https://github.com/vectorserver/yandex_music_fisher_mod/tree/master](https://github.com/vectorserver/yandex_music_fisher_mod/tree/master)](https://github.com/vectorserver/yandex_music_fisher_mod/archive/refs/heads/master.zip)
+  [https://github.com/vectorserver/yandex_music_fisher_mod/tree/master](https://github.com/vectorserver/yandex_music_fisher_mod/archive/refs/heads/master.zip)
 
 2. Нажмите кнопку **Code** (в верхней части страницы) и выберите **Download ZIP**, чтобы загрузить репозиторий как ZIP-архив.
 
