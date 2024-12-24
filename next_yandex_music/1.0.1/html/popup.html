@@ -7,9 +7,20 @@
     <title>NEXT Yandex Music Fisher mod by vectorserver</title>
     <!-- Bootstrap CSS -->
     <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container-fluid {
+            width: 500px;
+            max-width: 500px;
+            border-radius: 4px;
+        }
+
+        .img-fluid {
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-<div style="width:500px;max-width: 500px;padding: 15px 15px 0px 15px;margin: 0px" class="container-fluid">
+<section class="container-fluid">
     <div style="display: none;" id="authorization">
         <div class="row justify-content-center">
             <div class="col-md-6">
@@ -23,10 +34,11 @@
     </div>
     <div style="display: none;" id="work_panel">
         <div class="row">
-            <div class="col-5">
+            <div id="col1" class="col-5">
                 <strong>Текущий трек</strong>
                 <div id="trackPanel" class="card" style="width: 100%;">
-                    <img id="trackImage" src="../icons/music_by_pancaza.png" class="card-img-top" alt="Track Image">
+                    <img id="trackImage" src="../icons/music_by_pancaza.png" class="card-img-top img-fluid"
+                         alt="Track Image">
                     <div class="card-body">
                         <h5 id="trackName" class="text-center">Track Info</h5>
                         <p id="artistsList" class="text-center text-muted">No track information available</p>
@@ -38,26 +50,34 @@
                 </div>
 
             </div>
-            <div class="col-7">
+            <div id="col2" class="col-7">
                 <div id="playlistPanel" style="width: 100%;">
-                    <h5 id="title"></h5>
-                    <img id="playlistImage" src="../icons/music_by_pancaza.png" class="card-img-top" alt="Track Image">
-                    <pre id="meta"></pre>
-                    <a id="downloadButtonPl" style="display: none" href="#" class="btn btn-dark  btn-sm">...</a>
+                    <strong id="playlistPanelTitle"></strong>
+                    <img id="playlistPanelImage" src="../icons/music_by_pancaza.png" class="card-img-top img-fluid"
+                         alt="Track Image">
+                    <pre id="playlistPanelMeta"></pre>
+                    <div>
+                    <button id="playlistPanelMetaDownloadBtn" style="display: none;" href="#" class="btn btn-dark btn-sm text-center position-relative">
+                        <span class="text">...</span>
+                        <span class="counter position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+                    </button>
+                    </div>
+
+                    <div id="playlistPanelMetaotherData"></div>
                 </div>
             </div>
             <div class="col-12">
                 <hr>
-                <p>by <a target="_blank" href="https://vk.com/vectorserver">Vectorserver</a> / donat: <a
-                        class="btn btn-danger btn-sm" target="_blank" href="https://yoomoney.ru/to/410011249842897">yoomoney</a></p>
+                <p>
+                    by: <a target="_blank" href="https://vk.com/vectorserver">Vectorserver</a> /
+                    donat: <a target="_blank" href="https://yoomoney.ru/to/410011249842897">yoomoney</a>
+                    token end: <code id="tokenEnd"></code> <a id="tokenEndUrl" href="#">обновить</a>
+                </p>
 
             </div>
         </div>
     </div>
-
-
-    <pre id="dataContainer"></pre>
-</div>
+</section>
 <!-- Bootstrap JS Bundle (Optional, for advanced Bootstrap functionality) -->
 <script src="../html/bs5/browser-id3-writer.6.0.0.mjs"></script>
 

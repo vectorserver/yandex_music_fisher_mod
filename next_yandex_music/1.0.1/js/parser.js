@@ -21,6 +21,8 @@
                 // Если токена нет, запрашиваем новый
                 appYa.reToken();
             } else {
+                localStorage.setItem('appYa_hosting',window.location.origin);
+
                 // Если токен есть, парсим его и сохраняем в tokenData
                 appYa_token = JSON.parse(appYa_token);
                 appYa.tokenData = appYa_token;
