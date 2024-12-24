@@ -40,10 +40,7 @@
     "webRequest",
     "scripting",
     "activeTab",
-    "scripting",
-    "webRequest",
-    "storage",
-    "tabs"
+    "storage"
   ],
   "host_permissions": [
     "https://*.music.yandex.ru/*"
