@@ -21,6 +21,13 @@ const storageService = {
     },
     saveStorageData(key, value) {
         chrome.storage.local.set({[key]: value});
+    },
+    monitorStorageChanges(callback) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+
+            callback(changes);
+
+        });
     }
 };
 
@@ -38,11 +45,11 @@ const uiUpdater = {
             this.updatePlaylistInfo(parsedData, appYa_tabID);
             let checktokenData = uiUpdater.getTokenExpirationDate(parsedData.appYa_token);
             tokenEnd.innerText = checktokenData;
-            tokenEndUrl.addEventListener('click',function (){
+            tokenEndUrl.addEventListener('click', function () {
                 //localStorage.clear()
                 const dataToInject = `localStorage.clear();window.location.reload();`;
                 chrome.scripting.executeScript({
-                    target: { tabId: appYa_tabID },
+                    target: {tabId: appYa_tabID},
                     func: (injectedData) => eval(injectedData),
                     args: [dataToInject],
                     world: "MAIN",
@@ -50,7 +57,8 @@ const uiUpdater = {
                     window.close();
                 });
             });
-            console.log(parsedData)
+            console.log('parsedData',parsedData)
+            console.log('appYa_page',parsedData.appYa_page)
         } else {
             authorizationPanel.style.display = 'flex';
             authorizationBtn.setAttribute('href', parsedData.appYa_authorizationUrl);
@@ -171,7 +179,7 @@ const uiUpdater = {
 
         } else if (album && album?.items?.length) {
 
-            const year = album.meta?.year ? ' - '+album.meta.year : '';
+            const year = album.meta?.year ? ' - ' + album.meta.year : '';
             const title = album.meta.title.replace(':', '_') + year;
             const trackIds = album.items.map(track => track.id);
             const coverUri = `https://${album.meta.coverUri.replace(/%%/g, '200x200')}`;
@@ -225,6 +233,16 @@ const eventHandlers = {
         storageService.getStorageData((result) => {
             if (result.appYa_db) {
                 uiUpdater.updateUI(result.appYa_db, result.appYa_tabID);
+
+
+                storageService.monitorStorageChanges((changes) => {
+                    const { newValue, oldValue } = changes.appYa_db;
+                    if (newValue?.appYa_cureitTrack !== oldValue?.appYa_cureitTrack || newValue?.appYa_page !== oldValue?.appYa_page) {
+                        window.location.reload();
+                    }
+                });
+
+
             } else {
                 console.log('Нет данных в chrome.storage.local');
                 document.querySelector('body .container-fluid').innerHTML =

@@ -39,7 +39,16 @@
                         // Вызов функции обработки нового URL
                         appYa.parsePage();
                     }
-                    const playButtonsContent = document.querySelector('div[class*="PlaylistPage_content__"]');
+
+                    let plListcontent =[
+                        'AlbumPage',
+                        'PlaylistPage',
+                        'ArtistTracksPage',
+                    ]
+                    let seletors = plListcontent.map(sel=>`div[class*="${sel}_content__"]`);
+                    //console.log('seletors',seletors.join(","))
+
+                    const playButtonsContent = document.querySelector(seletors.join(","));
                     if (playButtonsContent) {
                         // Ваши действия при обнаружении изменений
                         appYa.processPlayButtons(playButtonsContent);
@@ -75,10 +84,10 @@
                         // Проверяем, была ли уже добавлена кнопка
                         if (!meta.querySelector('button.added')) {
 
-                            console.log('trackId', trackId);
+                            //console.log('trackId', trackId);
 
                             const downloadButton = document.createElement('button');
-                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;right: 15%;top: 15px;}';
+                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 20%;top: 15px;}';
                             downloadButton.textContent = 'Скачать';
                             downloadButton.classList.add('added');
                             downloadButton.setAttribute('style', style);
@@ -404,7 +413,7 @@
                 // Получаем текущий URL
                 let url = window.location.href;
                 //Если стрница Артиста
-                if (url.includes('/artist')) {
+                if (url.includes('/artist')&& !url.endsWith('/tracks')) {
                     url = `${url}/tracks`;
                 }
 
