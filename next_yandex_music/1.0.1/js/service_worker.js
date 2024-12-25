@@ -27,24 +27,21 @@ const badgeManager = {
         '#FFA1A1'  // Розовый
     ],
     usedColors: [], // Добавляем массив использованных цветов
-    updateBadge(count,bg) {
-        if (count === 0) {
-            chrome.action.setBadgeText({ text: "" });
-        } else {
-            chrome.action.setBadgeText({ text: count.toString() });
-            chrome.action.setBadgeBackgroundColor({ color: bg });
-        }
+    resetColors() {
+        this.usedColors = [];
     },
     getRandomColor() {
-        let availableColors = badgeManager.colors.filter(color => !badgeManager.usedColors.includes(color));
-
-        if (availableColors.length === 0) {
-            //throw new Error('Все цвета уже использованы');
+        if (this.usedColors.length === this.colors.length) {
+            this.resetColors();
         }
-        const randomIndex = Math.floor(Math.random() * availableColors.length);
-        const randomColor = availableColors[randomIndex];
-        badgeManager.usedColors.push(randomColor);
+        const availableColors = this.colors.filter(color => !this.usedColors.includes(color));
+        const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+        this.usedColors.push(randomColor);
         return randomColor;
+    },
+    updateBadge(count, bg) {
+        chrome.action.setBadgeText({ text: count > 0 ? count.toString() : "" });
+        chrome.action.setBadgeBackgroundColor({ color: bg });
     }
 };
 
