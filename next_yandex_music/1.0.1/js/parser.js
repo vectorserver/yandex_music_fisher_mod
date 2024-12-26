@@ -41,9 +41,14 @@
                     }
 
                     let plListcontent =[
+                        'MainPage',
                         'AlbumPage',
                         'PlaylistPage',
                         'ArtistTracksPage',
+                        'MusicHistoryPage',
+                        'CollectionPage',
+                        'ArtistPage',
+                        'TrackModal',
                     ]
                     let seletors = plListcontent.map(sel=>`div[class*="${sel}_content__"]`);
                     //console.log('seletors',seletors.join(","))
@@ -87,7 +92,7 @@
                             //console.log('trackId', trackId);
 
                             const downloadButton = document.createElement('button');
-                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 20%;top: 15px;}';
+                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 40%;top: 15px;}';
                             downloadButton.textContent = 'Скачать';
                             downloadButton.classList.add('added');
                             downloadButton.setAttribute('style', style);
@@ -102,7 +107,9 @@
                                     let downloadData = JSON.parse(result);
                                     let artist = downloadData.trackinfo.artists.map(art => art.name).join(", ");
                                     let filename = `${downloadData.trackinfo.title} - ${artist}.mp3`
-                                    console.log('downloadData',downloadData)
+
+                                    downloadButton.textContent = 'Загрузка...';
+                                    downloadButton.setAttribute('disabled','disabled');
 
                                     // Создание скрытого элемента <a> для загрузки файла
                                     const downloadLink = document.createElement('a');
@@ -115,7 +122,13 @@
                                     downloadLink.click();
 
                                     // Удаляем скрытый элемент <a> после загрузки
-                                    document.body.removeChild(downloadLink);
+                                    if (document.body.removeChild(downloadLink)){
+                                        setTimeout(function (){
+                                            downloadButton.textContent = 'Загрузка...';
+                                            downloadButton.removeAttribute('disabled');
+                                            downloadButton.textContent = 'Скачать';
+                                        },1000)
+                                    }
                                 });
                             });
 
@@ -416,9 +429,6 @@
                 if (url.includes('/artist')&& !url.endsWith('/tracks')) {
                     url = `${url}/tracks`;
                 }
-
-                console.log('parsePage', url)
-
 
                 // Выполняем запрос на текущий URL
                 const response = await fetch(url);
