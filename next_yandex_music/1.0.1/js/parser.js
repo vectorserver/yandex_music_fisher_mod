@@ -49,13 +49,16 @@
                         'CollectionPage',
                         'ArtistPage',
                         'TrackModal',
+                        'SearchPage',
                     ]
                     let seletors = plListcontent.map(sel=>`div[class*="${sel}_content__"]`);
-                    //console.log('seletors',seletors.join(","))
+
 
                     const playButtonsContent = document.querySelector(seletors.join(","));
                     if (playButtonsContent) {
                         // Ваши действия при обнаружении изменений
+
+
                         appYa.processPlayButtons(playButtonsContent);
                     }
 
@@ -74,10 +77,15 @@
 
         processPlayButtons: function (playButtonsContent) {
 
-            const playButtons = playButtonsContent.querySelectorAll('div[class*="Track_root__"]');
+
+            const playButtons = playButtonsContent.querySelectorAll('div[class*="Track_root__"],div[class*="TrackCard_root__"]');
+            console.log('playButtons',playButtons)
+
+
             playButtons.forEach((playButton) => {
-                const link = playButton.querySelector('a[class*="Meta_albumLink__"]');
-                const meta = playButton.querySelector('div[class*="Meta_titleContainer"]');
+                const link = playButton.querySelector('a[class*="Meta_albumLink__"],a[class*="TrackCard_titleLink__"]');
+                console.log('link',link)
+                const meta = playButton.querySelector('div[class*="Meta_titleContainer"],div[class*="TrackCard_titleContainer"]');
 
                 if (link) {
                     const regex = /\/track\/(\d+)/;
