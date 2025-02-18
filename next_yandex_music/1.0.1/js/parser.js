@@ -50,6 +50,7 @@
                         'ArtistPage',
                         'TrackModal',
                         'SearchPage',
+                        'ChartTracksPage',
                     ]
                     let seletors = plListcontent.map(sel=>`div[class*="${sel}_content__"]`);
 
@@ -79,12 +80,12 @@
 
 
             const playButtons = playButtonsContent.querySelectorAll('div[class*="Track_root__"],div[class*="TrackCard_root__"]');
-            console.log('playButtons',playButtons)
+            //console.log('playButtons',playButtons)
 
 
             playButtons.forEach((playButton) => {
                 const link = playButton.querySelector('a[class*="Meta_albumLink__"],a[class*="TrackCard_titleLink__"]');
-                console.log('link',link)
+                //console.log('link',link)
                 const meta = playButton.querySelector('div[class*="Meta_titleContainer"],div[class*="TrackCard_titleContainer"]');
 
                 if (link) {
@@ -100,7 +101,7 @@
                             //console.log('trackId', trackId);
 
                             const downloadButton = document.createElement('button');
-                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 40%;top: 15px;}';
+                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 40%;top: 15px;z-index:9999;';
                             downloadButton.textContent = 'Скачать';
                             downloadButton.classList.add('added');
                             downloadButton.setAttribute('style', style);
@@ -276,16 +277,17 @@
             const timestamp = Math.floor(Date.now() / 1000);
 
             // Данные для подписи
-            const dataToSign = `${timestamp}${trackId}nqmp3raw`;
+            const dataToSign = `${timestamp}${trackId}losslessmp3raw`;
 
             // Генерируем подпись
             const sign = await appYa.generateSign(secretKey, dataToSign);
 
             // Создаем параметры запроса
+            //Добавлен lossless
             const params = new URLSearchParams({
                 ts: timestamp,
                 trackId: trackId,
-                quality: 'nq',
+                quality: 'lossless',
                 codecs: 'mp3',
                 transports: 'raw',
                 sign: sign
@@ -360,65 +362,6 @@
                 // Устанавливаем тайм-аут для загрузки
 
                 const allData = JSON.stringify({'download': blobUrl, 'trackinfo': trackInfo});
-                // Объединяем данные и возвращаем их
-                return allData;
-            } catch (error) {
-                console.error('Error fetching file info:', error);
-            }
-        },
-        fetchFileInfoOne_NOMETA: async function (trackId) {
-            // Секретный ключ
-            const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
-
-            // Текущее время в секундах
-            const timestamp = Math.floor(Date.now() / 1000);
-
-            // Данные для подписи
-            const dataToSign = `${timestamp}${trackId}nqmp3raw`;
-
-            // Генерируем подпись
-            const sign = await appYa.generateSign(secretKey, dataToSign);
-
-            // Создаем параметры запроса
-            const params = new URLSearchParams({
-                ts: timestamp,
-                trackId: trackId,
-                quality: 'nq',
-                codecs: 'mp3',
-                transports: 'raw',
-                sign: sign
-            });
-
-            // Создаем заголовки запроса
-            const headers = new Headers({
-                'Authorization': `OAuth ${appYa.tokenData.access_token}`,
-                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/1'
-            });
-
-            // Формируем URL запроса
-            const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
-            const urlInfo = `${appYa.apiUrl}/tracks?trackIds=${trackId}&byVectorserver=1`;
-
-            try {
-                // Выполняем оба запроса параллельно
-                const [response1, response2] = await Promise.all([
-                    fetch(url, {headers}),
-                    fetch(urlInfo, {headers})
-                ]);
-
-                // Проверяем статусы ответов
-                if (!response1.ok) {
-                    throw new Error(`HTTP error! status: ${response1.status}`);
-                }
-                if (!response2.ok) {
-                    throw new Error(`HTTP error! status: ${response2.status}`);
-                }
-
-                // Получаем данные из ответов
-                const data1 = await response1.json();
-                const data2 = await response2.json();
-                let allData = JSON.stringify({'download': data1.result.downloadInfo.url, 'trackinfo': data2.result[0]})
-
                 // Объединяем данные и возвращаем их
                 return allData;
             } catch (error) {

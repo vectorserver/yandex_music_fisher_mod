@@ -108,6 +108,7 @@ const uiUpdater = {
         const playlist = parsedData.appYa_page.playlist;
         const artist = parsedData.appYa_page.artist;
         const album = parsedData.appYa_page.album;
+        const chart = parsedData.appYa_page.chart;
 
 
         if (playlist && playlist.items && playlist.meta) {
@@ -193,6 +194,23 @@ const uiUpdater = {
             playlistPanelMetaDownloadBtn.style.display = 'flex';
             playlistPanelMetaDownloadBtn.addEventListener('click', () => {
                 eventHandlers.downloadTracks(appYa_tabID, trackIds, `music/album/${escapeFileName(title)}`);
+            });
+
+
+        } else if (chart && chart?.tracksSubPage?.items) {
+
+            const trackIds = chart.tracksSubPage.items.map(track => track.id);
+            //const coverUri = `https://${album.meta.coverUri.replace(/%%/g, '200x200')}`;
+
+            //playlistPanelTitle.innerText = `Чарт`;
+            //playlistPanelImage.src = coverUri;
+
+            playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать ЧАРТ';
+            playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
+
+            playlistPanelMetaDownloadBtn.style.display = 'flex';
+            playlistPanelMetaDownloadBtn.addEventListener('click', () => {
+                eventHandlers.downloadTracks(appYa_tabID, trackIds, `music/album/chart`);
             });
 
 

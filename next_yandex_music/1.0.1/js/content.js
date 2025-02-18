@@ -22,10 +22,6 @@ const checkLocalStorageUpdates = () => {
         // Сравниваем текущее и предыдущее состояние
         if (currentState !== previousState) {
 
-
-
-            //console.log('localStorage обновлен!');
-
             // Обновляем предыдущее состояние
             previousState = currentState;
 
