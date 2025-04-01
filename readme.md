@@ -14,8 +14,8 @@ NEW TEST: https://github.com/vectorserver/yandex_music_fisher_mod/tree/master/
 
 2. Нажмите кнопку **Code** (в верхней части страницы) и выберите **Download ZIP**, чтобы загрузить репозиторий как ZIP-архив.
 
-3. Распакуйте скачанный архив в любую папку на вашем компьютере.  
-   Например: `C:\yandex_music_fisher_mod`.
+3. Распакуйте скачанный архив в любую папку на компьютере.  
+   Например: `C:\yandex_music_fisher_mod\`.
 
 ---
 
