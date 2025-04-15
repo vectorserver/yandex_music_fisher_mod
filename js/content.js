@@ -10,9 +10,24 @@ chrome.runtime.sendMessage({ action: "inject_parser" }, (data) => {
     }
 });
 
+
+// Загружаем настройки из chrome.storage.local и сохраняем в localStorage
+chrome.storage.local.get('app_setting', (result) => {
+    if (result.app_setting) {
+        // Копируем каждую настройку в localStorage
+        for (const [key, value] of Object.entries(result.app_setting)) {
+            console.log('appYa_setting_'+key, value)
+            localStorage.setItem('appYa_setting_'+key, value);
+        }
+
+    }
+});
+
+
+
+
 // Сохраняем начальное состояние localStorage для отслеживания изменений
 let previousState = JSON.stringify(localStorage);
-
 // Функция для проверки изменений в localStorage
 const checkLocalStorageUpdates = () => {
     try {

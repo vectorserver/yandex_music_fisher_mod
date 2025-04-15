@@ -6,7 +6,42 @@
 </head>
 <body style="font-size: 16pt">
 
+<h1>Настройки приложения</h1>
+<hr>
+<form id="settingsForm">
+    <label for="coverResolution">Разрешение обложки:</label>
+    <br>
+    <select id="coverResolution">
+        <option value="200">200x200</option>
+        <option selected value="400">400x400</option>
+        <option value="600">600x600</option>
+    </select>
+    <br>
+
+    <label for="audioQuality">Качество звука:</label>
+    <br>
+    <select id="audioQuality">
+        <option value="lq">Низкое</option>
+        <option value="nq">Среднее</option>
+        <option selected value="lossless">Высокое</option>
+    </select>
+    <br>
+
+    <label for="downloadFolder">Папка для загрузки:</label><br>
+    <input value="music" type="text" id="downloadFolder" placeholder="Например: music/downloads" />
+    <br>
+
+    <button type="submit">Сохранить</button>
+    <br>
+</form>
+<hr>
 <pre>
+#1.0.3
+    - Мелкие баги с именами файлов
+    - добавлена одновременная загрузка 4 файлов за раз
+    - включена настройки (обложка, качество, папка)
+
+
 #1.0.2
     - Исправлено имя файла {artist} - {title}
     - добавлена одновременная загрузка 4 файлов за раз
@@ -22,5 +57,6 @@
     Благодарности сюда:
     <a target="_blank" href="https://yoomoney.ru/to/410011249842897">money.yandex.ru/to/410015711366474</a>
 </p>
+<script src="../js/options.js" defer></script>
 </body>
 </html>

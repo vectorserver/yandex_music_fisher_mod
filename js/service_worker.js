@@ -48,6 +48,15 @@ const badgeManager = {
 const downloadManager = {
     async downloadTracks(message, globalCount) {
         let { tabId, playlistName, trackIds } = message;
+
+        // Ждём результат get
+        const settings = await chrome.storage.local.get('app_setting');
+
+        // Получаем путь из результата
+        const downloadFolder = settings?.app_setting?.downloadFolder || 'music';
+        playlistName = downloadFolder + '/' + playlistName;
+
+
         let batchSize = 4;
         globalCount += trackIds.length;
         let bg = badgeManager.getRandomColor();
@@ -145,6 +154,7 @@ const worker = {
                 appService.saveToStorage('appYa_db', { appYa_token: false });
             }
             appService.saveToStorage('appYa_db', message.data).then(() => {
+
                 //console.log("Данные localStorage успешно сохранены:", { appYa_db: message.data });
             }).catch(console.error);
             return true;

@@ -4,7 +4,7 @@
     console.log('parser.js loaded:', window.location.href);
 
     let appYa = {
-        location_origin: window.location.origin,
+        location_origin: 'https://oauth.yandex.ru/',
         apiUrl: 'https://api.music.yandex.net/',
         oauthUrl: 'https://oauth.yandex.ru/',
         client_id: '5c3ec0672830434a8855b036dac2b8a9',
@@ -115,7 +115,7 @@
                                 appYa.fetchFileInfoOne(trackId).then(result => {
                                     let downloadData = JSON.parse(result);
                                     let artist = downloadData.trackinfo.artists.map(art => art.name).join(", ");
-                                    let filename = `${downloadData.trackinfo.title} - ${artist}.mp3`
+                                    let filename = `${artist} - ${downloadData.trackinfo.title}.mp3`
 
                                     downloadButton.textContent = 'Загрузка...';
                                     downloadButton.setAttribute('disabled','disabled');
@@ -277,7 +277,10 @@
             const timestamp = Math.floor(Date.now() / 1000);
 
             // Данные для подписи
-            const dataToSign = `${timestamp}${trackId}losslessmp3raw`;
+            const appYa_setting_audioQuality = localStorage.getItem('appYa_setting_audioQuality')??'lossless';
+            console.log('appYa_setting_audioQuality',appYa_setting_audioQuality)
+
+            const dataToSign = `${timestamp}${trackId}${appYa_setting_audioQuality}mp3raw`;
 
             // Генерируем подпись
             const sign = await appYa.generateSign(secretKey, dataToSign);
@@ -287,7 +290,7 @@
             const params = new URLSearchParams({
                 ts: timestamp,
                 trackId: trackId,
-                quality: 'lossless',
+                quality: appYa_setting_audioQuality,
                 codecs: 'mp3',
                 transports: 'raw',
                 sign: sign
