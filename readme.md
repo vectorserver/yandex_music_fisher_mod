@@ -1,6 +1,6 @@
 Плагин для скачивания музыки с сервиса https://music.yandex.ru/
 
-NEW TEST: https://github.com/vectorserver/yandex_music_fisher_mod/tree/master/next_yandex_music/1.0.1
+NEW TEST: https://github.com/vectorserver/yandex_music_fisher_mod/
 
 
 ### Инструкция по скачиванию и установке распакованного расширения для Chrome/Opera/Edge
@@ -15,14 +15,14 @@ NEW TEST: https://github.com/vectorserver/yandex_music_fisher_mod/tree/master/ne
 2. Нажмите кнопку **Code** (в верхней части страницы) и выберите **Download ZIP**, чтобы загрузить репозиторий как ZIP-архив.
 
 3. Распакуйте скачанный архив в любую папку на вашем компьютере.  
-   Например: `C:\yandex_music_fisher_mod`.
+   Например: `C:\yandex_music_fisher_mod\`.
 
 ---
 
 #### Шаг 2: Переход в папку с расширением
 
 1. В распакованном архиве перейдите в папку:  
-   **`next_yandex_music/1.0.1`**.  
+   **`next_yandex_music/`**.  
    Это папка с файлами расширения, которые нужно загрузить в браузер.
 
 2. Убедитесь, что в папке есть такие файлы, как:
