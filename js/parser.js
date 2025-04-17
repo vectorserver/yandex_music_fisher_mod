@@ -4,7 +4,7 @@
     console.log('parser.js loaded:', window.location.href);
 
     let appYa = {
-        location_origin: 'https://oauth.yandex.ru/',
+        location_origin: 'https://music.yandex.ru/',
         apiUrl: 'https://api.music.yandex.net/',
         oauthUrl: 'https://oauth.yandex.ru/',
         client_id: '5c3ec0672830434a8855b036dac2b8a9',
