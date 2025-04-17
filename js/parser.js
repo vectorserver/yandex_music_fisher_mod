@@ -336,7 +336,11 @@
                 const mp3Data = new Uint8Array(await response.arrayBuffer());
 
                 // Загружаем обложку
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', '400x400'); // Подставляем размер
+                const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality')??'400';
+                let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
+
+                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq); // Подставляем размер
+                console.log('appYa_setting_coverQuality',qq,coverUrl);
                 const coverResponse = await fetch(`https://${coverUrl}`);
                 if (!coverResponse.ok) {
                     throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText}`);
