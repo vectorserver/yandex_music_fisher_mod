@@ -1,5 +1,6 @@
 console.log('js/popup.js');
 
+
 const section = document.querySelector('section');
 const col_one = document.getElementById('col1');
 const col_two = document.getElementById('col2');

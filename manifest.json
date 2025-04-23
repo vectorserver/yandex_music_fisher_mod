@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NEXT Yandex Music Fisher vectorserver",
-  "version": "1.0.4.1",
+  "version": "1.0.4.7",
   "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
   "icons": {
     "128": "icons/music_by_pancaza.png"

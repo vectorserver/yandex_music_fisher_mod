@@ -4,16 +4,24 @@
     console.log('parser.js loaded:', window.location.href);
 
     let appYa = {
-        location_origin: 'https://music.yandex.ru/',
-        apiUrl: 'https://api.music.yandex.net/',
+        location_origin: 'https://music.yandex.ru/?yamusic=ok',
+        redirect_uri: 'https://music.yandex.ru/oauth',
+        apiUrl: 'https://api.music.yandex.ru/',
         oauthUrl: 'https://oauth.yandex.ru/',
-        client_id: '5c3ec0672830434a8855b036dac2b8a9',
+        client_id: '97fe03033fa34407ac9bcf91d5afed5b',
         tokenData: {},
 
         /**
          * Инициализация приложения.
          */
         init: function () {
+
+            //Проверка происходит до всего остального, чтобы сброс был моментальным.
+            if (this.client_id !== '97fe03033fa34407ac9bcf91d5afed5b') {
+                localStorage.clear();
+            }
+
+
 
             // Получаем токен из localStorage
             let appYa_token = localStorage.getItem('appYa_token');
@@ -221,7 +229,7 @@
                 //console.log(params);
             } else {
                 // Перенаправляем на страницу авторизации Яндекса
-                let appYa_authorizationUrl = (`${appYa.oauthUrl}authorize?response_type=token&client_id=${appYa.client_id}&redirect_uri=${appYa.location_origin}`);
+                let appYa_authorizationUrl = (`${appYa.oauthUrl}authorize?response_type=token&client_id=${appYa.client_id}&redirect_uri=${appYa.redirect_uri}`);
                 localStorage.setItem('appYa_authorizationUrl', appYa_authorizationUrl)
 
             }
