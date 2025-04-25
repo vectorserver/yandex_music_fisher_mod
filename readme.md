@@ -1,6 +1,6 @@
-[💰 Поддержать разработку](https://yoomoney.ru/fundraise/19RHODCT4D1.250425)
+# [💰 Поддержать разработку](https://yoomoney.ru/fundraise/19RHODCT4D1.250425)
 
-# 🎵 Yandex Music Fisher Mod
+ 🎵 Yandex Music Fisher Mod
 
 Плагин для скачивания музыки с сервиса [Yandex Music](https://music.yandex.ru/)
 
