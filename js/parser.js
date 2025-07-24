@@ -288,7 +288,7 @@
             const appYa_setting_audioQuality = localStorage.getItem('appYa_setting_audioQuality')??'lossless';
             console.log('appYa_setting_audioQuality',appYa_setting_audioQuality)
 
-            const dataToSign = `${timestamp}${trackId}${appYa_setting_audioQuality}mp3raw`;
+            const dataToSign = `${timestamp}${trackId}${appYa_setting_audioQuality}flacraw`;
 
             // Генерируем подпись
             const sign = await appYa.generateSign(secretKey, dataToSign);
@@ -299,7 +299,7 @@
                 ts: timestamp,
                 trackId: trackId,
                 quality: appYa_setting_audioQuality,
-                codecs: 'mp3',
+                codecs: 'flac',
                 transports: 'raw',
                 sign: sign
             });
@@ -313,6 +313,8 @@
             // Формируем URL запроса
             const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
             const urlInfo = `${appYa.apiUrl}/tracks?trackIds=${trackId}&byVectorserver=1`;
+
+
 
             try {
                 // Выполняем оба запроса параллельно
@@ -335,6 +337,7 @@
 
                 const downloadUrl = data1.result.downloadInfo.url;
                 const trackInfo = data2.result[0];
+                console.log('appYa_trackInfo',(trackInfo));
 
                 // Загружаем MP3-файл
                 const response = await fetch(downloadUrl);
@@ -361,12 +364,18 @@
                     .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')]) // Исполнители
                     .setFrame('TALB', trackInfo.albums[0].title) // Альбом
                     .setFrame('TYER', trackInfo.albums[0].year) // Год выпуска
+                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown']) // Жанр (например, "Pop", "Rock")
+                    .setFrame('WCOP', 'Загружен с Yandex Music https://music.yandex.ru/track/'+trackInfo.id) // Копирайт-ссылка
+                    .setFrame('WORS', 'https://music.yandex.ru/track/'+trackInfo.id) // Копирайт-ссылка
+                    .setFrame('WOAS', 'Yandex Music') // Копирайт-ссылка
                     .setFrame('APIC', { // Обложка
                         type: 3,
                         data: coverData,
                         description: 'Cover (front)'
                     })
                     .addTag();
+
+                console.log('appYa_trackInfo_writer',(writer));
 
                 // Создаем Blob с обновленными данными
                 const updatedMp3 = writer.arrayBuffer;
@@ -521,6 +530,7 @@
 
                     const folder = this.extractFolderFromUrl(response.url);
 
+
                     // Добавляем проверку download=1
                     const parsedUrl = new URL(response.url);
                     const byVectorserver = parsedUrl.searchParams.get('byVectorserver') === '1';
@@ -532,6 +542,7 @@
                                 localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
                                 const trackId = new URL(response.url).searchParams.get('trackId');
                                 if (trackId) {
+
                                     await appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
                                         if (cureitTrack) {
                                             localStorage.setItem('appYa_cureitTrack', cureitTrack);
