@@ -101,6 +101,7 @@ const downloadManager = {
 
                                         // Если есть переменные в downloadFolder, обрабатываем их
                                         const defaultTrackInfo = {
+                                            dir: playlistName,
                                             genre: inputData.trackinfo.albums[0].genre || 'Unknown',
                                             year: inputData.trackinfo.albums[0].year || new Date().getFullYear(),
                                             artist: artists || 'Unknown Artist',
