@@ -56,6 +56,12 @@ const downloadManager = {
         const downloadFolder = settings?.app_setting?.downloadFolder || 'music';
         playlistName = downloadFolder + '/' + playlistName;
 
+        // Проверяем, содержит ли downloadFolder переменные
+        const hasVariables = /%[^%]+%/.test(downloadFolder);
+
+
+
+
 
         let batchSize = 4;
         globalCount += trackIds.length;
@@ -88,6 +94,42 @@ const downloadManager = {
                                 badgeManager.updateBadge(globalCount, bg);
 
                                 if (inputData !== null && inputData.download) {
+
+                                    // Если есть переменные в downloadFolder, обрабатываем их
+                                    if (hasVariables) {
+                                        let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
+
+                                        // Если есть переменные в downloadFolder, обрабатываем их
+                                        const defaultTrackInfo = {
+                                            genre: inputData.trackinfo.albums[0].genre || 'Unknown',
+                                            year: inputData.trackinfo.albums[0].year || new Date().getFullYear(),
+                                            artist: artists || 'Unknown Artist',
+                                            album: inputData.trackinfo.albums[0].title || 'Unknown Album'
+                                        };
+
+                                        // Словарь переменных
+                                        const variables = {
+                                            '%genre%': defaultTrackInfo.genre,
+                                            '%year%': defaultTrackInfo.year.toString(),
+                                            '%artist%': defaultTrackInfo.artist,
+                                            '%album%': defaultTrackInfo.album
+                                        };
+
+                                        // Заменяем переменные в downloadFolder
+                                        let processedFolder = downloadFolder;
+
+                                        for (const [variable, value] of Object.entries(variables)) {
+                                            if (downloadFolder.includes(variable)) {
+                                                // Очищаем значение от недопустимых символов
+                                                const cleanValue = value.toString().replace(/[<>:"/\\|?*]/g, '_');
+                                                processedFolder = processedFolder.replace(new RegExp(variable.replace(/%/g, '\\%'), 'gi'), cleanValue);
+                                            }
+                                        }
+
+                                        playlistName = processedFolder;
+                                    }
+
+
                                     downloadManager.downloadFile(inputData, playlistName);
                                 }
                                 resolve(trackId);

@@ -8,6 +8,10 @@
 
 <h1>Настройки приложения</h1>
 <hr>
+<p>
+    Благодарности сюда:
+    <a target="_blank" href="https://yoomoney.ru/to/410011249842897">money.yandex.ru/to/410015711366474</a>
+</p>
 <form id="settingsForm">
     <label for="coverResolution">Разрешение обложки:</label>
     <br>
@@ -30,15 +34,26 @@
     <br>
 
     <label for="downloadFolder">Папка для загрузки:</label><br>
-    <input value="music" type="text" id="downloadFolder" placeholder="Например: music/downloads" />
+    <input style="min-width: 400px" value="music" type="text" id="downloadFolder"
+           placeholder="Например: music/%genre%/%year%/%artist%/%album%"/><br>
+    <code style="font-size: 12px;">
+        Переменные:
+        <code style="color: #b300ff">%genre%</code> - Жанр
+        <code style="color: #b300ff">%year%</code> - Год
+        <code style="color: #b300ff">%artist%</code> - Артист
+        <code style="color: #b300ff">%album%</code> - Альбом
+        <br>Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту, артисту
+    </code>
     <br>
 
     <button type="submit">Сохранить</button>
     <br>
 </form>
 <hr>
-<pre style="height: 150px">
+<pre style="">
 
+#2.1
+    - добавлены переменные для загрузки %genre% - Жанр %year% - Год %artist% - Артист %album% - Альбом
 
 #2.0
     - обновленный алгоритм закачки
@@ -65,10 +80,7 @@
 </pre>
 
 
-<p>
-    Благодарности сюда:
-    <a target="_blank" href="https://yoomoney.ru/to/410011249842897">money.yandex.ru/to/410015711366474</a>
-</p>
+
 <script src="../js/options.js" defer></script>
 </body>
 </html>
