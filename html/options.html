@@ -35,9 +35,12 @@
 
     <label for="downloadFolder">Папка для загрузки:</label><br>
     <input style="min-width: 400px" value="music" type="text" id="downloadFolder"
-           placeholder="Например: music/%genre%/%year%/%artist%/%album%"/><br>
+           placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/><br>
     <code style="font-size: 12px;">
-        Переменные:
+        Переменные:<br>
+       
+        Например: music/%dir%/%genre%/%year%/%artist%/%album%
+        <code style="color: #b300ff">%dir%</code> - Директория откуда качать
         <code style="color: #b300ff">%genre%</code> - Жанр
         <code style="color: #b300ff">%year%</code> - Год
         <code style="color: #b300ff">%artist%</code> - Артист
@@ -53,7 +56,7 @@
 <pre style="">
 
 #2.1
-    - добавлены переменные для загрузки %genre% - Жанр %year% - Год %artist% - Артист %album% - Альбом
+    - добавлены переменные для загрузки %genre% - Жанр %year% - Год %artist% - Артист %album% - Альбом и %dir%
 
 #2.0
     - обновленный алгоритм закачки

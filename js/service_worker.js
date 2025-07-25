@@ -109,6 +109,7 @@ const downloadManager = {
 
                                         // Словарь переменных
                                         const variables = {
+                                            '%dir%': playlistName,
                                             '%genre%': defaultTrackInfo.genre,
                                             '%year%': defaultTrackInfo.year.toString(),
                                             '%artist%': defaultTrackInfo.artist,
