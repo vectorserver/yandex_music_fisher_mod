@@ -22,7 +22,6 @@
             }
 
 
-
             // Получаем токен из localStorage
             let appYa_token = localStorage.getItem('appYa_token');
             if (!appYa_token) {
@@ -48,7 +47,7 @@
                         appYa.parsePage();
                     }
 
-                    let plListcontent =[
+                    let plListcontent = [
                         'MainPage',
                         'AlbumPage',
                         'PlaylistPage',
@@ -60,7 +59,7 @@
                         'SearchPage',
                         'ChartTracksPage',
                     ]
-                    let seletors = plListcontent.map(sel=>`div[class*="${sel}_content__"]`);
+                    let seletors = plListcontent.map(sel => `div[class*="${sel}_content__"]`);
 
 
                     const playButtonsContent = document.querySelector(seletors.join(","));
@@ -115,7 +114,6 @@
                             downloadButton.setAttribute('style', style);
 
 
-
                             meta.appendChild(downloadButton);
 
 
@@ -126,7 +124,7 @@
                                     let filename = `${artist} - ${downloadData.trackinfo.title}.mp3`
 
                                     downloadButton.textContent = 'Загрузка...';
-                                    downloadButton.setAttribute('disabled','disabled');
+                                    downloadButton.setAttribute('disabled', 'disabled');
 
                                     // Создание скрытого элемента <a> для загрузки файла
                                     const downloadLink = document.createElement('a');
@@ -139,12 +137,12 @@
                                     downloadLink.click();
 
                                     // Удаляем скрытый элемент <a> после загрузки
-                                    if (document.body.removeChild(downloadLink)){
-                                        setTimeout(function (){
+                                    if (document.body.removeChild(downloadLink)) {
+                                        setTimeout(function () {
                                             downloadButton.textContent = 'Загрузка...';
                                             downloadButton.removeAttribute('disabled');
                                             downloadButton.textContent = 'Скачать';
-                                        },1000)
+                                        }, 1000)
                                     }
                                 });
                             });
@@ -285,8 +283,8 @@
             const timestamp = Math.floor(Date.now() / 1000);
 
             // Данные для подписи
-            const appYa_setting_audioQuality = localStorage.getItem('appYa_setting_audioQuality')??'lossless';
-            console.log('appYa_setting_audioQuality',appYa_setting_audioQuality)
+            const appYa_setting_audioQuality = localStorage.getItem('appYa_setting_audioQuality') ?? 'lossless';
+            console.log('appYa_setting_audioQuality', appYa_setting_audioQuality)
 
             const dataToSign = `${timestamp}${trackId}${appYa_setting_audioQuality}flacraw`;
 
@@ -312,8 +310,7 @@
 
             // Формируем URL запроса
             const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
-            const urlInfo = `${appYa.apiUrl}/tracks?trackIds=${trackId}&byVectorserver=1`;
-
+            const urlInfo = `${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`;
 
 
             try {
@@ -337,7 +334,7 @@
 
                 const downloadUrl = data1.result.downloadInfo.url;
                 const trackInfo = data2.result[0];
-                console.log('appYa_trackInfo',(trackInfo));
+                console.log('appYa_trackInfo', (trackInfo));
 
                 // Загружаем MP3-файл
                 const response = await fetch(downloadUrl);
@@ -347,11 +344,11 @@
                 const mp3Data = new Uint8Array(await response.arrayBuffer());
 
                 // Загружаем обложку
-                const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality')??'400';
+                const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality') ?? '400';
                 let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
 
                 const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq); // Подставляем размер
-                console.log('appYa_setting_coverQuality',qq,coverUrl);
+                console.log('appYa_setting_coverQuality', qq, coverUrl);
                 const coverResponse = await fetch(`https://${coverUrl}`);
                 if (!coverResponse.ok) {
                     throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText}`);
@@ -360,14 +357,23 @@
 
                 // Обновляем метаданные
                 const writer = new ID3Writer(mp3Data);
+                // Получаем данные из trackInfo
+                const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
+                const totalTracksInAlbum = trackInfo.albums[0].trackCount || '1';
+
                 writer.setFrame('TIT2', trackInfo.title) // Название трека
                     .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')]) // Исполнители
                     .setFrame('TALB', trackInfo.albums[0].title) // Альбом
                     .setFrame('TYER', trackInfo.albums[0].year) // Год выпуска
                     .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown']) // Жанр (например, "Pop", "Rock")
-                    .setFrame('WCOP', 'Загружен с Yandex Music https://music.yandex.ru/track/'+trackInfo.id) // Копирайт-ссылка
-                    .setFrame('WORS', 'https://music.yandex.ru/track/'+trackInfo.id) // Копирайт-ссылка
+                    .setFrame('WCOP', 'Загружен с Yandex Music https://music.yandex.ru/track/' + trackInfo.id) // Копирайт-ссылка
+                    .setFrame('WORS', 'https://music.yandex.ru/track/' + trackInfo.id) // Копирайт-ссылка
                     .setFrame('WOAS', 'Yandex Music') // Копирайт-ссылка
+                    .setFrame('TDAT', trackInfo.albums[0]?.releaseDate || '') // Дата
+
+                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`) //TPOS (позиция трека в альбоме)
+                    .setFrame('TEXT', 'by vectorserver todo///') // Text
+                    .setFrame('TLEN', trackInfo?.durationMs || 30000) // Длительность трека в миллисекундах
                     .setFrame('APIC', { // Обложка
                         type: 3,
                         data: coverData,
@@ -375,7 +381,7 @@
                     })
                     .addTag();
 
-                console.log('appYa_trackInfo_writer',(writer));
+                console.log('appYa_trackInfo_writer', (writer));
 
                 // Создаем Blob с обновленными данными
                 const updatedMp3 = writer.arrayBuffer;
@@ -401,7 +407,7 @@
                 // Получаем текущий URL
                 let url = window.location.href;
                 //Если стрница Артиста
-                if (url.includes('/artist')&& !url.endsWith('/tracks')) {
+                if (url.includes('/artist') && !url.endsWith('/tracks')) {
                     url = `${url}/tracks`;
                 }
 
