@@ -348,12 +348,17 @@
                 let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
 
                 const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq); // Подставляем размер
-                console.log('appYa_setting_coverQuality', qq, coverUrl);
+                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq); // Подставляем размер
+
                 const coverResponse = await fetch(`https://${coverUrl}`);
+                const artistcoverResponse = await fetch(`https://${artistUrl}`);
+
                 if (!coverResponse.ok) {
                     throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText}`);
                 }
+
                 const coverData = new Uint8Array(await coverResponse.arrayBuffer());
+                const artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
 
                 // Обновляем метаданные
                 const writer = new ID3Writer(mp3Data);
@@ -366,18 +371,17 @@
                     .setFrame('TALB', trackInfo.albums[0].title) // Альбом
                     .setFrame('TYER', trackInfo.albums[0].year) // Год выпуска
                     .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown']) // Жанр (например, "Pop", "Rock")
-                    .setFrame('WCOP', 'Загружен с Yandex Music https://music.yandex.ru/track/' + trackInfo.id) // Копирайт-ссылка
-                    .setFrame('WORS', 'https://music.yandex.ru/track/' + trackInfo.id) // Копирайт-ссылка
-                    .setFrame('WOAS', 'Yandex Music') // Копирайт-ссылка
-                    .setFrame('TDAT', trackInfo.albums[0]?.releaseDate || '') // Дата
-
                     .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`) //TPOS (позиция трека в альбоме)
-                    .setFrame('TEXT', 'by vectorserver todo///') // Text
-                    .setFrame('TLEN', trackInfo?.durationMs || 30000) // Длительность трека в миллисекундах
-                    .setFrame('APIC', { // Обложка
+                    //Обложка альбома (спереди)
+                    .setFrame('APIC', {
                         type: 3,
                         data: coverData,
                         description: 'Cover (front)'
+                    })// Логотип группы/артиста
+                    .setFrame('APIC', {
+                        type: 17, // Band/Artist Logotype
+                        data: artistcoverResponseData,
+                        description: 'Band Logo'
                     })
                     .addTag();
 
