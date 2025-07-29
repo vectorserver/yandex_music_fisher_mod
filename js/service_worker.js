@@ -210,6 +210,35 @@ const worker = {
             downloadManager.downloadTracks(message, this.globalCount);
             return true;
         }
+
+        // Обработчик сообщения для загрузки через SHIFT+D или двойной клик
+        if (message.action === "download_SFIFTD") {
+            // Парсим информацию о файле из localStorage данных сообщения
+            const trDinfo = JSON.parse(message.data["appYa_get-file-info"]);
+
+            // Проверяем, есть ли ID трека для загрузки
+            if (trDinfo.downloadInfo.trackId) {
+                // Формируем данные для загрузки:
+                // - tabId: ID вкладки отправителя (для контекста)
+                // - trackIds: массив ID треков для загрузки (в данном случае один трек)
+                // - playlistName: имя плейлиста (по умолчанию 'music')
+                let downData = {
+                    tabId: sender.tab.id,           // ID вкладки, откуда пришел запрос
+                    trackIds: [trDinfo.downloadInfo.trackId], // Массив ID треков для загрузки
+                    playlistName: 'music'           // Имя плейлиста для организации загрузок
+                }
+
+                // Логируем данные для отладки
+                console.log('download_SFIFT+D', downData)
+
+                // Вызываем менеджер загрузок для скачивания трека(ов)
+                // this.globalCount - глобальный счетчик загрузок (для нумерации/отслеживания)
+                downloadManager.downloadTracks(downData, this.globalCount);
+            }
+            return true; // Подтверждаем получение сообщения
+        }
+
+
     }
 };
 

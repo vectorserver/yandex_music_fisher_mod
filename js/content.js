@@ -60,3 +60,26 @@ const checkLocalStorageUpdates = () => {
 
 // Устанавливаем интервал проверки localStorage каждые 1000 мс (1 секунда)
 setInterval(checkLocalStorageUpdates, 1000);
+
+
+// Для SHIFT + D и SHIFT + В
+document.addEventListener('keydown', function(event) {
+    if (event.shiftKey && (event.key === 'D' || event.key === 'В')) {
+        event.preventDefault();
+
+        // Открываем popup.html
+        chrome.runtime.sendMessage({
+            action: "download_SFIFTD",
+            data: { ...window.localStorage }
+        });
+    }
+});
+
+// Для двойного клика мыши
+document.addEventListener('dblclick', function(event) {
+    // Открываем popup.html
+    chrome.runtime.sendMessage({
+        action: "download_SFIFTD",
+        data: { ...window.localStorage }
+    });
+});
