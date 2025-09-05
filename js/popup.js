@@ -219,7 +219,7 @@ const uiUpdater = {
         } else {
             col_one.classList.add('col-12');
             col_two.classList.add('d-none');
-            section.style.width = '240px';
+            section.style.width = '280px';
 
         }
 
