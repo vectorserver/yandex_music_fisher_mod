@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>NEXT Yandex Music Fisher</title>
+    <!-- Bootstrap CSS -->
+    <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
 </head>
 <body style="font-size: 16pt">
 
@@ -10,12 +12,12 @@
 <hr>
 <p>
     Благодарности сюда:
-    <a target="_blank" href="https://yoomoney.ru/to/410011249842897">money.yandex.ru/to/410015711366474</a>
+    <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250">💰yoomoney</a>
 </p>
-<form id="settingsForm">
+<form class="form" id="settingsForm">
     <label for="coverResolution">Разрешение обложки:</label>
     <br>
-    <select id="coverResolution">
+    <select class="form-select" id="coverResolution">
         <option value="200">200x200</option>
         <option selected value="400">400x400</option>
         <option value="600">600x600</option>
@@ -26,7 +28,7 @@
 
     <label for="audioQuality">Качество звука:</label>
     <br>
-    <select id="audioQuality">
+    <select class="form-select" id="audioQuality">
         <option value="lq">Низкое</option>
         <option value="nq">Среднее</option>
         <option selected value="lossless">Высокое</option>
@@ -34,11 +36,10 @@
     <br>
 
     <label for="downloadFolder">Папка для загрузки:</label><br>
-    <input style="min-width: 400px" value="music" type="text" id="downloadFolder"
+    <input class="form-control" style="min-width: 400px" value="music" type="text" id="downloadFolder"
            placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/><br>
     <code style="font-size: 12px;">
         Переменные:<br>
-
         Например: music/%dir%/%genre%/%year%/%artist%/%album%
         <code style="color: #b300ff">%dir%</code> - Директория откуда качать
         <code style="color: #b300ff">%genre%</code> - Жанр
@@ -49,7 +50,7 @@
     </code>
     <br>
 
-    <button type="submit">Сохранить</button>
+    <button class="btn btn-dark" type="submit">Сохранить</button>
     <br>
 </form>
 <hr>
