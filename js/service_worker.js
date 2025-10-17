@@ -4,7 +4,7 @@ console.log('service_worker.js loaded');
 
 const appService = {
     saveToStorage(key, value) {
-        return chrome.storage.local.set({ [key]: value });
+        return chrome.storage.local.set({[key]: value});
     },
     getFromStorage(key) {
         return chrome.storage.local.get(key);
@@ -40,14 +40,14 @@ const badgeManager = {
         return randomColor;
     },
     updateBadge(count, bg) {
-        chrome.action.setBadgeText({ text: count > 0 ? count.toString() : "" });
-        chrome.action.setBadgeBackgroundColor({ color: bg });
+        chrome.action.setBadgeText({text: count > 0 ? count.toString() : ""});
+        chrome.action.setBadgeBackgroundColor({color: bg});
     }
 };
 
 const downloadManager = {
     async downloadTracks(message, globalCount) {
-        let { tabId, playlistName, trackIds } = message;
+        let {tabId, playlistName, trackIds} = message;
 
         // Ждём результат get
         const settings = await chrome.storage.local.get('app_setting');
@@ -60,10 +60,7 @@ const downloadManager = {
         const hasVariables = /%[^%]+%/.test(downloadFolder);
 
 
-
-
-
-        let batchSize = 4;
+        let batchSize = settings?.app_setting?.downlodadCount ?? 4;
         globalCount += trackIds.length;
         let bg = badgeManager.getRandomColor();
         badgeManager.updateBadge(globalCount, bg);
@@ -76,7 +73,7 @@ const downloadManager = {
                     const dataToInject = `appYa.fetchFileInfoOne(${trackId})`;
 
                     chrome.scripting.executeScript({
-                        target: { tabId: tabId },
+                        target: {tabId: tabId},
                         func: (injectedData) => eval(injectedData),
                         args: [dataToInject],
                         world: "MAIN",
@@ -132,7 +129,7 @@ const downloadManager = {
                                     }
 
 
-                                    downloadManager.downloadFile(inputData, playlistName);
+                                    downloadManager.downloadFile(inputData, playlistName, settings);
                                 }
                                 resolve(trackId);
                             } else {
@@ -145,12 +142,16 @@ const downloadManager = {
         }
     },
 
-    downloadFile(inputData, playlistName) {
+    downloadFile(inputData, playlistName, settings) {
+
+        console.log('downloadFile settings', settings?.app_setting)
         const escapeFileName = (fileName) => fileName.replace(/[\\/:*?"<>|]/g, '_');
         let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
         let title = inputData.trackinfo.title;
         let fileName = `${playlistName}/${escapeFileName(artists)} - ${escapeFileName(title)}.mp3`;
 
+
+        //Тут нужно еще проверка о том что файл существует settings?.app_setting.checkexists если есть то не качаем
         chrome.downloads.download({
             url: inputData.download,
             filename: fileName,
@@ -161,6 +162,25 @@ const downloadManager = {
                 console.error("Ошибка загрузки:", chrome.runtime.lastError.message);
                 return;
             }
+
+
+            // Отслеживаем завершение загрузки
+            if (settings?.app_setting.savehistory === "0" || settings?.app_setting.savehistory === 0) {
+                chrome.downloads.onChanged.addListener(function listener(delta) {
+                    if (delta.id === downloadId && delta.state && delta.state.current === 'complete') {
+                        // Удаляем запись из истории загрузок
+                        chrome.downloads.erase({id: downloadId}, () => {
+                            if (chrome.runtime.lastError) {
+                                console.warn("Не удалось удалить запись о загрузке:", chrome.runtime.lastError.message);
+                            } else {
+                                console.log(`Загрузка ${downloadId} удалена из истории`);
+                            }
+                        });
+                        // Отписываемся от слушателя, чтобы не ловить другие загрузки
+                        chrome.downloads.onChanged.removeListener(listener);
+                    }
+                });
+            }
         });
     }
 };
@@ -170,14 +190,14 @@ const worker = {
     globalCount: 0,
     onMessage(message, sender, sendResponse) {
         if (message.action === "inject_parser") {
-            sendResponse({ success: true, message: 'parser.js OK', tabId: sender.tab.id });
+            sendResponse({success: true, message: 'parser.js OK', tabId: sender.tab.id});
             chrome.scripting.executeScript({
-                target: { tabId: sender.tab.id },
+                target: {tabId: sender.tab.id},
                 files: ["html/bs5/browser-id3-writer.6.0.0.mjs", "js/parser.js"],
                 world: "MAIN"
             }).then(() => {
                 chrome.scripting.executeScript({
-                    target: { tabId: sender.tab.id },
+                    target: {tabId: sender.tab.id},
                     func: () => {
                         if (typeof appYa !== 'undefined' && typeof appYa.init === 'function') {
                             appYa.init();
@@ -193,9 +213,9 @@ const worker = {
         }
 
         if (message.action === "send_localStorage") {
-            sendResponse({ success: true, data: message.data });
+            sendResponse({success: true, data: message.data});
             if (message.data && !message.data.appYa_token) {
-                appService.saveToStorage('appYa_db', { appYa_token: false });
+                appService.saveToStorage('appYa_db', {appYa_token: false});
             }
             appService.saveToStorage('appYa_db', message.data).then(() => {
 
@@ -206,7 +226,7 @@ const worker = {
 
         if (message.action === "download_Tracks") {
             console.log('download_Tracks', message);
-            sendResponse({ download_Tracks: message });
+            sendResponse({download_Tracks: message});
             downloadManager.downloadTracks(message, this.globalCount);
             return true;
         }

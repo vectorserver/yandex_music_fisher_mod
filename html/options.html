@@ -7,7 +7,7 @@
     <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
 </head>
 <body style="font-size: 16pt">
-
+<div class="container">
 <h1>Настройки приложения</h1>
 <hr>
 <p>
@@ -16,18 +16,18 @@
 </p>
 <form class="form" id="settingsForm">
     <label for="coverResolution">Разрешение обложки:</label>
-    <br>
+
     <select class="form-select" id="coverResolution">
         <option value="200">200x200</option>
-        <option selected value="400">400x400</option>
-        <option value="600">600x600</option>
+        <option value="400">400x400</option>
+        <option selected value="600">600x600</option>
         <option value="800">800x800</option>
         <option value="1000">1000x1000</option>
     </select>
     <br>
 
     <label for="audioQuality">Качество звука:</label>
-    <br>
+
     <select class="form-select" id="audioQuality">
         <option value="lq">Низкое</option>
         <option value="nq">Среднее</option>
@@ -35,9 +35,22 @@
     </select>
     <br>
 
+    <label for="downlodadCount">Кол-во треков за раз:</label>
+
+    <select class="form-select" id="downlodadCount">
+        <option value="2">2 трека</option>
+        <option selected value="4">4 трека</option>
+        <option value="6">6 треков</option>
+        <option value="8">8 треков</option>
+    </select>
+    <code style="font-size: 12px;">
+        Единовременная закачака за один проход
+    </code>
+    <br>
+
     <label for="downloadFolder">Папка для загрузки:</label><br>
-    <input class="form-control" style="min-width: 400px" value="music" type="text" id="downloadFolder"
-           placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/><br>
+    <input required class="form-control" style="min-width: 400px" value="music" type="text" id="downloadFolder"
+           placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/>
     <code style="font-size: 12px;">
         Переменные:<br>
         Например: music/%dir%/%genre%/%year%/%artist%/%album%
@@ -50,11 +63,30 @@
     </code>
     <br>
 
+    <label for="savehistory">Сохранять историю в менеджере загрузок:</label>
+    <br>
+    <select class="form-select" id="savehistory">
+        <option value="1">Да</option>
+        <option selected value="0">Нет</option>
+    </select>
+    <br>
+    <!--label for="checkexists">Перезаписывать скачанные файлы:</label>
+    <br>
+    <select class="form-select" id="checkexists">
+        <option value="1">Да</option>
+        <option selected value="0">Нет</option>
+    </select>
+    <br-->
+
     <button class="btn btn-dark" type="submit">Сохранить</button>
     <br>
 </form>
 <hr>
 <pre style="">
+
+#2.1.17
+    - Сохранять историю в менеджере загрузок
+    - Единовременная закачака за один проход
 
 #2.1.11
     - Обработчик сообщения для загрузки через SHIFT+D или двойной клик
@@ -86,7 +118,7 @@
     - добавлен чарт https://music.yandex.ru/chart.
 </pre>
 
-
+</div>
 
 <script src="../js/options.js" defer></script>
 </body>
