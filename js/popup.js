@@ -44,19 +44,19 @@ const storageService = {
 
 // Обновление пользовательского интерфейса
 const uiUpdater = {
-    updateUI(data, appYa_tabID,app) {
+    updateUI(data, appYa_tabID, app) {
         const parsedData = parser.parseStorage(data);
-        const cQ = app?.app_setting?.coverQuality??300;
+        const cQ = app?.app_setting?.coverQuality ?? 300;
         var cQR = `${cQ}x${cQ}`;
-        console.log('coverQuality',cQR)
+        console.log('coverQuality', cQR)
 
         const authorizationPanel = document.getElementById('authorization');
         const authorizationBtn = authorizationPanel.querySelector('#authorize');
 
 
         if (parsedData.appYa_token) {
-            this.updateTrackInfo(parsedData, appYa_tabID,cQR);
-            this.updatePlaylistInfo(parsedData, appYa_tabID,cQR);
+            this.updateTrackInfo(parsedData, appYa_tabID, cQR);
+            this.updatePlaylistInfo(parsedData, appYa_tabID, cQR);
             let checktokenData = uiUpdater.getTokenExpirationDate(parsedData.appYa_token);
             tokenEnd.innerText = checktokenData;
             tokenEndUrl.addEventListener('click', function () {
@@ -91,7 +91,7 @@ const uiUpdater = {
         }
     },
 
-    updateTrackInfo(parsedData, appYa_tabID,cQR) {
+    updateTrackInfo(parsedData, appYa_tabID, cQR) {
         if (!parsedData.appYa_cureitTrack) {
             document.querySelector('body .container-fluid').innerHTML =
                 'Включите трек, Яндекс Музыки, потом вернитесь сюда)';
@@ -118,13 +118,13 @@ const uiUpdater = {
         });
     },
 
-    updatePlaylistInfo(parsedData, appYa_tabID,cQR) {
+    updatePlaylistInfo(parsedData, appYa_tabID, cQR) {
         const playlist = parsedData.appYa_page.playlist;
         const artist = parsedData.appYa_page.artist;
         const album = parsedData.appYa_page.album;
         const chart = parsedData.appYa_page.chart;
 
-        //console.log('parsedData.appYa_page',parsedData.appYa_page)
+        //console.log('updatePlaylistInfo_type',parsedData.appYa_page)
 
 
         if (playlist && playlist.items && playlist.meta) {
@@ -145,8 +145,17 @@ const uiUpdater = {
             });
         } else if (artist && artist?.fullTracksListSubpage?.ids?.length) {
             console.log('artist', artist)
-            const title = artist.meta.artist.name.replace(':', '_');
-            const coverUri = `https://${artist.meta.artist.coverUri.replace(/%%/g, cQR)}`;
+            let title = 'Артист...';
+            let coverUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg==';
+            if (artist.meta) {
+                 title = artist.meta.artist.name.replace(':', '_');
+                 coverUri = `https://${artist.meta.artist.coverUri.replace(/%%/g, cQR)}`;
+            } else {
+
+                if(artist.commonSubPage.artistName) title = artist.commonSubPage.artistName.replace(':', '_');
+                if(artist.lastRelease.coverUri) coverUri = `https://${artist.lastRelease.coverUri.replace(/%%/g, cQR)}`;
+
+            }
             const trackIds = artist.fullTracksListSubpage.ids;
             playlistPanelTitle.innerText = `Артист: ${title}`;
             playlistPanelImage.src = coverUri;
@@ -255,11 +264,10 @@ const eventHandlers = {
             if (result.appYa_db) {
 
 
-
-                uiUpdater.updateUI(result.appYa_db, result.appYa_tabID,result);
+                uiUpdater.updateUI(result.appYa_db, result.appYa_tabID, result);
 
                 storageService.monitorStorageChanges((changes) => {
-                    const { newValue, oldValue } = changes.appYa_db;
+                    const {newValue, oldValue} = changes.appYa_db;
                     if (newValue?.appYa_cureitTrack !== oldValue?.appYa_cureitTrack || newValue?.appYa_page !== oldValue?.appYa_page) {
                         window.location.reload();
                     }
