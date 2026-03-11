@@ -132,53 +132,76 @@ const uiUpdater = {
             const trackIds = playlist.items.map(track => track.id);
             const totalTracks = trackIds.length;
 
-            // Ищем или создаем select
-            let selectRange = document.getElementById('playlistDownloadRange');
-            if (!selectRange) {
-                selectRange = document.createElement('select');
-                selectRange.id = 'playlistDownloadRange';
-                selectRange.className = 'form-select';
-                selectRange.style.marginBottom = '10px';
-                playlistPanelMetaDownloadBtn.parentNode.insertBefore(selectRange, playlistPanelMetaDownloadBtn);
+            // Ищем или создаем контейнер для Range
+            let rangeWrapper = document.getElementById('playlistDownloadWrapper');
+            if (!rangeWrapper) {
+                rangeWrapper = document.createElement('div');
+                rangeWrapper.id = 'playlistDownloadWrapper';
+                rangeWrapper.style.marginBottom = '15px';
+
+                rangeWrapper.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.9rem;">
+                <span id="rangeLabelText" class="text-muted">Выбрано треков:</span>
+                <b id="rangeValueDisplay" class="text-primary">1 — ${totalTracks}</b>
+            </div>
+            <div class="range-controls px-1">
+                <small class="text-muted" style="font-size: 0.7rem;">От:</small>
+                <input type="range" class="form-range" id="rangeStart" min="1" step="1">
+                <small class="text-muted" style="font-size: 0.7rem;">До:</small>
+                <input type="range" class="form-range" id="rangeEnd" min="1" step="1">
+            </div>
+        `;
+                playlistPanelMetaDownloadBtn.parentNode.insertBefore(rangeWrapper, playlistPanelMetaDownloadBtn);
             }
 
-            // Показываем select только если треков > 50
-            if (totalTracks > 50) {
-                selectRange.style.display = 'block';
-                selectRange.innerHTML = '';
+            const rStart = document.getElementById('rangeStart');
+            const rEnd = document.getElementById('rangeEnd');
+            const rDisplay = document.getElementById('rangeValueDisplay');
 
-                // Опция по умолчанию
-                selectRange.add(new Option(`Скачать всё (${totalTracks})`, 'all'));
+            // Настройка параметров (показываем только если треков > 1)
+            if (totalTracks > 1) {
+                rangeWrapper.style.display = 'block';
+                rStart.max = totalTracks;
+                rEnd.max = totalTracks;
 
-                // Генерация градации +50
-                for (let count = 50; count < totalTracks; count += 50) {
-                    selectRange.add(new Option(`Последние ${count}`, count));
-                }
+                // По умолчанию — ВСЕ
+                rStart.value = 1;
+                rEnd.value = totalTracks;
+
+                const updateRangeUI = () => {
+                    let s = parseInt(rStart.value);
+                    let e = parseInt(rEnd.value);
+
+                    // Валидация: начало не может быть больше конца
+                    if (s > e) {
+                        rStart.value = e;
+                        s = e;
+                    }
+
+                    rDisplay.innerText = (s === 1 && e === totalTracks)
+                        ? `Все (${totalTracks})`
+                        : `${s} — ${e} (шт: ${e - s + 1})`;
+                };
+
+                rStart.oninput = updateRangeUI;
+                rEnd.oninput = updateRangeUI;
+                updateRangeUI();
             } else {
-                selectRange.style.display = 'none';
+                rangeWrapper.style.display = 'none';
             }
 
-            playlistPanelMetaDownloadBtn.innerText = (totalTracks > 50) ? 'Скачать выбранное' : 'Скачать плейлист';
+            playlistPanelMetaDownloadBtn.innerText = 'Скачать выбранное';
             playlistPanelMetaDownloadBtn.style.display = 'flex';
             playlistPanelMetaDownloadBtn.style.width = '100%';
 
-
-
-
             playlistPanelMetaDownloadBtn.onclick = () => {
-                let idsToDownload = trackIds;
+                const startIdx = parseInt(rStart.value) - 1; // в индекс массива
+                const endIdx = parseInt(rEnd.value);
 
-                // Если выбран конкретный лимит, берем треки с конца
-                if (totalTracks > 50 && selectRange.value !== 'all') {
-                    const count = parseInt(selectRange.value);
-                    idsToDownload = trackIds.slice(-count);
-                }
+                // Формируем массив согласно выбранному диапазону
+                const idsToDownload = trackIds.slice(startIdx, endIdx);
 
                 eventHandlers.downloadTracks(appYa_tabID, idsToDownload, `playlist/${title}`);
-
-
-
-
             };
 
             // Обновление мета-данных
@@ -186,6 +209,7 @@ const uiUpdater = {
             playlistPanelMeta.innerHTML = `Автор: ${playlist.meta.owner.name}<br>Кол-во: ${totalTracks}`;
             playlistPanelImage.src = `https://${playlist.meta.coverUri.replace(/%%/g, cQR)}`;
         }
+
 
 
 
