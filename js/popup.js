@@ -130,20 +130,66 @@ const uiUpdater = {
         if (playlist && playlist.items && playlist.meta) {
             const title = playlist.meta.title.replace(':', '_');
             const trackIds = playlist.items.map(track => track.id);
-            const coverUri = `https://${playlist.meta.coverUri.replace(/%%/g, cQR)}`;
-            const meta = `Автор плейлиста: ${playlist.meta.owner.name}<br>Кол-во треков: ${playlist.items.length}`;
+            const totalTracks = trackIds.length;
 
-            playlistPanelTitle.innerText = `Плейлист: ${title}`;
-            playlistPanelMeta.innerHTML = meta;
-            playlistPanelImage.src = coverUri;
+            // Ищем или создаем select
+            let selectRange = document.getElementById('playlistDownloadRange');
+            if (!selectRange) {
+                selectRange = document.createElement('select');
+                selectRange.id = 'playlistDownloadRange';
+                selectRange.className = 'form-select';
+                selectRange.style.marginBottom = '10px';
+                playlistPanelMetaDownloadBtn.parentNode.insertBefore(selectRange, playlistPanelMetaDownloadBtn);
+            }
 
+            // Показываем select только если треков > 50
+            if (totalTracks > 50) {
+                selectRange.style.display = 'block';
+                selectRange.innerHTML = '';
 
-            playlistPanelMetaDownloadBtn.innerText = 'Скачать плейлист';
+                // Опция по умолчанию
+                selectRange.add(new Option(`Скачать всё (${totalTracks})`, 'all'));
+
+                // Генерация градации +50
+                for (let count = 50; count < totalTracks; count += 50) {
+                    selectRange.add(new Option(`Последние ${count}`, count));
+                }
+            } else {
+                selectRange.style.display = 'none';
+            }
+
+            playlistPanelMetaDownloadBtn.innerText = (totalTracks > 50) ? 'Скачать выбранное' : 'Скачать плейлист';
             playlistPanelMetaDownloadBtn.style.display = 'flex';
-            playlistPanelMetaDownloadBtn.addEventListener('click', () => {
-                eventHandlers.downloadTracks(appYa_tabID, trackIds, `playlist/${title}`);
-            });
-        } else if (artist && artist?.fullTracksListSubpage?.ids?.length) {
+            playlistPanelMetaDownloadBtn.style.width = '100%';
+
+
+
+
+            playlistPanelMetaDownloadBtn.onclick = () => {
+                let idsToDownload = trackIds;
+
+                // Если выбран конкретный лимит, берем треки с конца
+                if (totalTracks > 50 && selectRange.value !== 'all') {
+                    const count = parseInt(selectRange.value);
+                    idsToDownload = trackIds.slice(-count);
+                }
+
+                eventHandlers.downloadTracks(appYa_tabID, idsToDownload, `playlist/${title}`);
+
+
+
+
+            };
+
+            // Обновление мета-данных
+            playlistPanelTitle.innerText = `Плейлист: ${title}`;
+            playlistPanelMeta.innerHTML = `Автор: ${playlist.meta.owner.name}<br>Кол-во: ${totalTracks}`;
+            playlistPanelImage.src = `https://${playlist.meta.coverUri.replace(/%%/g, cQR)}`;
+        }
+
+
+
+        else if (artist && artist?.fullTracksListSubpage?.ids?.length) {
             console.log('artist', artist)
             let title = 'Артист...';
             let coverUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg==';
