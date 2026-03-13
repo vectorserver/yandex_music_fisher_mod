@@ -51,6 +51,8 @@
     <label for="downloadFolder">Папка для загрузки:</label><br>
     <input required class="form-control" style="min-width: 400px" value="music" type="text" id="downloadFolder"
            placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/>
+
+
     <code style="font-size: 12px;">
         Переменные:<br>
         Например: music/%dir%/%genre%/%year%/%artist%/%album%
@@ -62,6 +64,19 @@
         <br>Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту, артисту
     </code>
     <br>
+
+    <div class="form-check form-switch mb-3 mt-3">
+        <input class="form-check-input" type="checkbox" id="numberingTracks">
+        <label class="form-check-label" for="numberingTracks">
+            Нумеровать имена треков
+        </label>
+        <br>
+        <code id="trackExample" class="music_nuber_name" style="font-size: 12px; margin-left: -4.5em;">
+            music_name.mp3
+        </code>
+    </div>
+
+
 
     <label for="savehistory">Сохранять историю в менеджере загрузок:</label>
     <br>
@@ -83,6 +98,9 @@
 </form>
 <hr>
 <pre style="">
+
+#2.1.24
+    - Добавлена нумерация треков из альбома
 
 #2.1.20
     - add select -- Выбор кол-ва дреков для скачивания из плейлиста

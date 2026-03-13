@@ -92,6 +92,8 @@ const downloadManager = {
 
                                 if (inputData !== null && inputData.download) {
 
+                                    console.log('inputData',inputData)
+
                                     // Если есть переменные в downloadFolder, обрабатываем их
                                     if (hasVariables) {
                                         let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
@@ -126,6 +128,8 @@ const downloadManager = {
                                         }
 
                                         playlistName = processedFolder;
+
+
                                     }
 
 
@@ -144,11 +148,25 @@ const downloadManager = {
 
     downloadFile(inputData, playlistName, settings) {
 
-        console.log('downloadFile settings', settings?.app_setting)
+        //console.log('[service_worker.js] inputData',inputData)
+        //console.log('[service_worker.js] playlistName',playlistName)
+        //console.log('[service_worker.js] settings',settings)
+
         const escapeFileName = (fileName) => fileName.replace(/[\\/:*?"<>|]/g, '_');
         let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
         let title = inputData.trackinfo.title;
-        let fileName = `${playlistName}/${escapeFileName(artists)} - ${escapeFileName(title)}.mp3`;
+
+        let trackPrefix = '';
+        if (settings?.app_setting?.numberingTracks === true) {
+            // 2. Исправлено обращение к массиву: [0] вместо .[0]
+            const trackIdx = inputData.trackinfo?.albums?.[0]?.trackPosition?.index;
+            trackPrefix = trackIdx
+                ? trackIdx.toString().padStart(2, '0') + '. '
+                : '';
+        }
+        let fileName = `${playlistName}/${trackPrefix}${escapeFileName(artists)} - ${escapeFileName(title)}.mp3`;
+
+        console.log('[service_worker.js] fileName',fileName);
 
 
         //Тут нужно еще проверка о том что файл существует settings?.app_setting.checkexists если есть то не качаем
@@ -171,9 +189,9 @@ const downloadManager = {
                         // Удаляем запись из истории загрузок
                         chrome.downloads.erase({id: downloadId}, () => {
                             if (chrome.runtime.lastError) {
-                                console.warn("Не удалось удалить запись о загрузке:", chrome.runtime.lastError.message);
+                                //console.warn("Не удалось удалить запись о загрузке:", chrome.runtime.lastError.message);
                             } else {
-                                console.log(`Загрузка ${downloadId} удалена из истории`);
+                                //console.log(`Загрузка ${downloadId} удалена из истории`);
                             }
                         });
                         // Отписываемся от слушателя, чтобы не ловить другие загрузки
