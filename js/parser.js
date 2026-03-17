@@ -1,5 +1,7 @@
-(() => {
+// @grant        GM_xmlhttpRequest
+// @connect      api.music.yandex.ru
 
+(() => {
 
     console.log('parser.js loaded:', window.location.href);
 
@@ -90,7 +92,8 @@
             //console.log('playButtons',playButtons)
 
 
-            playButtons.forEach((playButton) => {
+            playButtons.forEach((playButton, index) => {
+                const humanIndex = index + 1; // Теперь отсчет пойдет с 1
                 const link = playButton.querySelector('a[class*="Meta_albumLink__"],a[class*="TrackCard_titleLink__"]');
                 //console.log('link',link)
                 const meta = playButton.querySelector('div[class*="Meta_titleContainer"],div[class*="TrackCard_titleContainer"]');
@@ -117,7 +120,11 @@
                             meta.appendChild(downloadButton);
 
 
-                            downloadButton.addEventListener('click', function () {
+                            downloadButton.addEventListener('click', function (event) {
+                                event.stopPropagation();
+                                downloadButton.textContent = 'Собираю клубнику...)))';
+                                downloadButton.setAttribute('disabled', 'disabled');
+
                                 appYa.fetchFileInfoOne(trackId).then(result => {
                                     let downloadData = JSON.parse(result);
                                     let artist = downloadData.trackinfo.artists.map(art => art.name).join(", ");
@@ -144,6 +151,15 @@
                                             downloadButton.textContent = 'Скачать';
                                         }, 1000)
                                     }
+                                }).catch(error => {
+                                    // 3. Вызываем алерт при любой ошибке (сетевой или из throw)
+                                    console.log("Ошибка при скачивании:", error);
+                                    //alert("Произошла ошибка: " + error);
+
+                                    // Возвращаем кнопку в исходное состояние
+                                    downloadButton.removeAttribute('disabled');
+                                    downloadButton.textContent = error;
+                                    downloadButton.remove();
                                 });
                             });
 
@@ -153,50 +169,7 @@
 
                     }
                 }
-                // Ваши действия с найденными кнопками playButtons
             });
-            // Поиск всех div с классом, содержащим PlayButtonWithCover
-
-            /*playButtons.forEach(playButton => {
-                // Проверка наличия кнопки с классом download-button
-                let meta = playButton.querySelector('div[class*="Meta_titleContainer"]');
-                const link = playButton.querySelector('a[class*="Meta_albumLink__"]');
-
-                if (link) {
-                    const regex = /\/track\/(\d+)/;
-                    const match = link.href.match(regex);
-                    const trackId = match ? match[1] : null;
-                    if (trackId) {
-                        console.log('trackId', trackId);
-
-                        // Создание кнопки загрузки
-                        const downloadButton = document.createElement('button');
-                        downloadButton.textContent = 'Download';
-                        downloadButton.classList.add('download-button'); // Добавляем класс для стилизации
-
-                        meta.appendChild(downloadButton);
-
-                        downloadButton.addEventListener('click', function () {
-                            appYa.fetchFileInfoOne(trackId).then(result => {
-                                let download = JSON.parse(result.download);
-
-                                // Создание скрытого элемента <a> для загрузки файла
-                                const downloadLink = document.createElement('a');
-                                downloadLink.href = download;
-                                downloadLink.download = 'track.mp3'; // Установите имя файла по вашему усмотрению
-                                downloadLink.style.display = 'none';
-                                document.body.appendChild(downloadLink);
-
-                                // Программно вызываем клик на скрытом элементе <a>
-                                downloadLink.click();
-
-                                // Удаляем скрытый элемент <a> после загрузки
-                                document.body.removeChild(downloadLink);
-                            });
-                        });
-                    }
-                }
-            });*/
         },
 
         /**

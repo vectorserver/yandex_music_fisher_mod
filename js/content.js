@@ -64,22 +64,44 @@ setInterval(checkLocalStorageUpdates, 1000);
 
 // Для SHIFT + D и SHIFT + В
 document.addEventListener('keydown', function(event) {
-    if (event.shiftKey && (event.key === 'D' || event.key === 'В')) {
+    // event.code 'KeyD' срабатывает для физической клавиши D/В независимо от раскладки
+    if (event.shiftKey && event.code === 'KeyD') {
         event.preventDefault();
 
-        // Открываем popup.html
-        chrome.runtime.sendMessage({
-            action: "download_SFIFTD",
-            data: { ...window.localStorage }
-        });
+        try {
+            chrome.runtime.sendMessage({
+                action: "download_SFIFTD",
+                data: { ...window.localStorage }
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.warn("Ошибка связи: скорее всего, расширение было обновлено. Перезагрузите страницу.");
+                }
+            });
+        } catch (e) {
+            console.error("Контекст расширения недействителен. Пожалуйста, обновите страницу.");
+        }
     }
-});
+}, true);
+
 
 // Для двойного клика мыши
 document.addEventListener('dblclick', function(event) {
-    // Открываем popup.html
-    chrome.runtime.sendMessage({
-        action: "download_SFIFTD",
-        data: { ...window.localStorage }
-    });
-});
+    // Не срабатывать, если кликнули по полю ввода или кнопке
+    const tag = event.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+
+    try {
+        // Проверяем, что расширение все еще "живо"
+        if (chrome.runtime && chrome.runtime.id) {
+            chrome.runtime.sendMessage({
+                action: "download_SFIFTD",
+                data: { ...window.localStorage }
+            }, (response) => {
+                // Обработка ответа, если нужно
+                if (chrome.runtime.lastError) { /* игнорируем */ }
+            });
+        }
+    } catch (e) {
+        console.warn("Контекст расширения потерян. Перезагрузите страницу.");
+    }
+}, true);
