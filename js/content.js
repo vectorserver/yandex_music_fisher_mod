@@ -54,7 +54,7 @@ const checkLocalStorageUpdates = () => {
             });
         }
     } catch (error) {
-        //console.error("Ошибка при проверке localStorage:", error);
+        console.error("Ошибка при проверке localStorage:", error);
     }
 };
 
