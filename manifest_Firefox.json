@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "NEXT Yandex Music Fisher vectorserver",
-  "version": "2.1.25",
+  "name": "Yandex Music Fisher mod by vectorserver",
+  "version": "2.1.26",
   "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
   "icons": {
     "128": "icons/music_by_pancaza.png"
@@ -9,7 +9,7 @@
   "action": {
     "default_icon": "icons/music_by_pancaza.png",
     "default_popup": "html/popup.html",
-    "default_title": "NEXT Yandex Music Fisher mod by vectorserver"
+    "default_title": "Yandex Music Fisher mod by vectorserver"
   },
   "background": {
     "scripts": ["js/service_worker.js"],

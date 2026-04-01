@@ -503,140 +503,64 @@
         monitorFetchRequests() {
             const originalFetch = window.fetch;
 
-            window.fetch = async (url, options) => {
-                let trackIdFromBody = null;
-                let requestUrl = (url instanceof Request) ? url.url : url;
-
+            // Вспомогательная функция для логики (чтобы не дублировать код)
+            this.handleBackgroundData = async (trackId, clonedResponse) => {
                 try {
-                    //ПЕРЕХВАТ ТЕЛА ЗАПРОСА (ДО отправки)
-                    if (requestUrl.includes('/plays')) {
-                        try {
-                            const requestData = (url instanceof Request) ? await url.clone().text() : options?.body;
-                            if (requestData) {
-                                const parsedBody = JSON.parse(requestData);
-                                // Яндекс присылает plays как массив объектов
-                                trackIdFromBody = parsedBody.plays?.[0]?.trackId;
-                            }
-                        } catch (e) {
-                            console.error("Ошибка парсинга исходящего body:", e);
-                        }
-                    }
+                    // Если есть ответ от сервера, вынимаем ID и JSON оттуда
+                    if (clonedResponse) {
+                        const parsedUrl = new URL(clonedResponse.url);
+                        const finalTrackId = trackId || parsedUrl.searchParams.get('trackId');
 
-                    //ВЫПОЛНЕНИЕ ОРИГИНАЛЬНОГО ЗАПРОСА
-                    const response = await originalFetch(url, options);
-
-                    //ОБРАБОТКА РЕЗУЛЬТАТА
-                    const parsedUrl = new URL(response.url);
-                    const isByVector = parsedUrl.searchParams.get('byVectorserver') === '1';
-
-                    if (!isByVector) {
-                        const contentType = response.headers.get("content-type");
-
-                        // Пытаемся найти trackId: либо из пойманного body, либо из URL
-                        const trackId = trackIdFromBody || parsedUrl.searchParams.get('trackId');
-
-                        if (trackId) {
-                            // Если нашли ID трека — сразу запрашиваем инфо
-                            await appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
+                        if (finalTrackId) {
+                            appYa.fetchFileInfoOne(finalTrackId).then(cureitTrack => {
                                 if (cureitTrack) localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                            });
+                            }).catch(() => {});
                         }
 
-                        //JSON-ответы сервера в localStorage:
+                        const contentType = clonedResponse.headers.get("content-type");
                         if (contentType?.includes("application/json")) {
-                            const folder = this.extractFolderFromUrl(response.url);
-                            const data = await response.clone().json(); // клонируем только здесь
+                            const folder = this.extractFolderFromUrl(clonedResponse.url);
+                            const data = await clonedResponse.json();
                             if (data && Object.keys(data).length > 0) {
                                 localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
                             }
                         }
+                    } else if (trackId) {
+                        // Если у нас есть только trackId из перехваченного Request
+                        appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
+                            if (cureitTrack) localStorage.setItem('appYa_cureitTrack', cureitTrack);
+                        }).catch(() => {});
                     }
-
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
+                } catch (e) {}
             };
-        },
-        monitorFetchRequests_OLD() {
-            const originalFetch = window.fetch;
+
             window.fetch = async (url, options) => {
-                try {
+                let trackIdFromBody = null;
+                let requestUrl = (url instanceof Request) ? url.url : (url ? url.toString() : "");
 
-                    let requestData = null;
-
-                    // Проверяем, есть ли body в options (если url — это строка)
-                    if (options && options.body) {
-                        requestData = options.body;
-                    }
-                    // Если первый аргумент — это объект Request
-                    else if (url instanceof Request) {
-                        const clonedRequest = url.clone();
-                        requestData = await clonedRequest.text();
-                    }
-                    let trackIdFromBody = null;
-                    // Если это запрос к /plays, парсим и логируем тело
-                    if (requestData && (typeof url === 'string' ? url : url.url).includes('/plays')) {
+                if (requestUrl.includes('/plays')) {
+                    if (url instanceof Request) {
+                        url.clone().text().then(t => {
+                            try {
+                                const id = JSON.parse(t).plays?.[0]?.trackId;
+                                if (id) this.handleBackgroundData(id, null);
+                            } catch(e) {}
+                        });
+                    } else if (typeof options?.body === 'string') {
                         try {
-                            const parsedBody = JSON.parse(requestData);
-                            console.log("options ПЕРЕХВАЧЕННЫЙ BODY ЗАПРОСА:", parsedBody);
-                            trackIdFromBody = parsedBody.plays[0].trackId;
-
-                        } catch (e) {
-                            console.error("options Ошибка парсинга body:", e);
-                        }
+                            trackIdFromBody = JSON.parse(options.body).plays?.[0]?.trackId;
+                        } catch(e) {}
                     }
-
-
-
-                    const response = await originalFetch(url, options);
-                    const clonedResponse = response.clone();
-                    const contentType = clonedResponse.headers.get("content-type");
-
-                    const folder = this.extractFolderFromUrl(response.url);
-
-
-                    // Добавляем проверку download=1
-                    const parsedUrl = new URL(response.url);
-                    const byVectorserver = parsedUrl.searchParams.get('byVectorserver') === '1';
-
-
-
-                    if (!byVectorserver) {
-                        if (contentType?.includes("application/json")) {
-                            const data = await clonedResponse.json();
-                            if (data && Object.entries(data).length) {
-                                let setParamNAme = `appYa_${folder}`;
-                                localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
-                                const trackId = trackIdFromBody || new URL(response.url).searchParams.get('trackId');
-                                if (trackId) {
-
-                                    await appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
-                                        if (cureitTrack) {
-                                            localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                                        } else {
-                                            console.error('Failed to fetch file info');
-                                        }
-                                    });
-
-                                }
-
-                            }
-
-                        }
-
-
-                    }
-
-
-                    return response;
-                } catch (error) {
-                    //console.error('Error in fetch interception:', error);
-                    throw error;
                 }
-            };
 
-            //console.log('Fetch monitoring with trackId handling enabled.');
+                const response = await originalFetch(url, options);
+
+                setTimeout(() => {
+                    this.handleBackgroundData(trackIdFromBody, response.clone());
+                }, 0);
+
+                return response;
+            };
         },
         addImageToAudio: async function (audioURL, imageURL) {
             return new Promise(async (resolve, reject) => {
