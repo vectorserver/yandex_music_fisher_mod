@@ -68,7 +68,7 @@
 
 1. Перейди: `about:debugging#/runtime/this-firefox`
 2. Нажми 👉 **Загрузить временное дополнение...**
-3. Укажи файл `manifest_Firefox.json` внутри папки `C:\yandex_music_fisher_mod-master\`
+3. Укажи файл `manifest_Firefox.json` внутри папки `C:\yandex_music_fisher_mod-master\` если не помогло удали `manifest.json` только оставь `manifest_Firefox.json`
 4. Расширение активируется до перезапуска Firefox
 
 > ⚠️ Firefox поддерживает только временную установку без подписи. После перезапуска расширение будет отключено.
