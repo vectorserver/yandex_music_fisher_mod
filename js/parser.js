@@ -277,7 +277,7 @@
             // Создаем заголовки запроса
             const headers = new Headers({
                 'Authorization': `OAuth ${appYa.tokenData.access_token}`,
-                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/1'
+                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
             });
 
             // Формируем URL запроса
@@ -469,52 +469,34 @@
         },
 
         /**
-         * Получение информации о треке.
-         * @param {string} trackId - Идентификатор трека.
-         */
-        fetchTrackInfo: async function (trackId) {
-            // Формируем URL запроса
-            const newUrl = `https://api.music.yandex.ru/tracks?trackIds=${trackId}`;
-
-            try {
-                // Выполняем запрос
-                const response = await fetch(newUrl);
-
-                // Проверяем статус ответа
-                if (!response.ok) {
-                    //console.error(`Error fetching track with ID: ${trackId}`);
-                    return;
-                }
-
-                // Получаем данные в формате JSON
-                const data = await response.json();
-                //console.log('appYa_TrackInfo:', data.result[0]);
-
-                // Сохраняем данные в localStorage
-                //localStorage.setItem('appYa_TrackInfo', JSON.stringify(data.result[0]));
-            } catch (error) {
-                //console.error('Error in fetchTrackInfo:', error);
-            }
-        },
-
-        /**
          * Мониторинг fetch-запросов.
          */
         monitorFetchRequests() {
             const originalFetch = window.fetch;
 
-            // Вспомогательная функция для логики (чтобы не дублировать код)
+            // Переменная для хранения последнего обработанного ID трека
+            this.lastTrackId = null;
+
+            // Вспомогательная функция для логики
             this.handleBackgroundData = async (trackId, clonedResponse) => {
                 try {
-                    // Если есть ответ от сервера, вынимаем ID и JSON оттуда
+                    let finalTrackId = trackId;
+
                     if (clonedResponse) {
                         const parsedUrl = new URL(clonedResponse.url);
-                        const finalTrackId = trackId || parsedUrl.searchParams.get('trackId');
+                        if (!finalTrackId) {
+                            finalTrackId = parsedUrl.searchParams.get('trackId');
+                        }
 
-                        if (finalTrackId) {
+                        // 1. ПРОВЕРКА НА ДУБЛЬ: Если этот ID совпадает с прошлым — выходим
+                        if (finalTrackId && finalTrackId !== this.lastTrackId) {
+                            this.lastTrackId = finalTrackId; // Запоминаем текущий ID
+
+                            console.log(`[Скачивание] Запускаем fetchFileInfoOne для ID: ${finalTrackId}`);
                             appYa.fetchFileInfoOne(finalTrackId).then(cureitTrack => {
                                 if (cureitTrack) localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                            }).catch(() => {});
+                            }).catch(() => {
+                            });
                         }
 
                         const contentType = clonedResponse.headers.get("content-type");
@@ -525,18 +507,29 @@
                                 localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
                             }
                         }
-                    } else if (trackId) {
-                        // Если у нас есть только trackId из перехваченного Request
-                        appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
+                    } else if (finalTrackId && finalTrackId !== this.lastTrackId) {
+                        // 2. ТАКАЯ ЖЕ ПРОВЕРКА НА ДУБЛЬ: Для случая, когда пришел только trackId из Request /plays
+                        this.lastTrackId = finalTrackId;
+
+                        console.log(`[Plays] Запускаем fetchFileInfoOne для ID: ${finalTrackId}`);
+                        appYa.fetchFileInfoOne(finalTrackId).then(cureitTrack => {
                             if (cureitTrack) localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                        }).catch(() => {});
+                        }).catch(() => {
+                        });
                     }
-                } catch (e) {}
+                } catch (e) {
+                }
             };
 
             window.fetch = async (url, options) => {
-                let trackIdFromBody = null;
                 let requestUrl = (url instanceof Request) ? url.url : (url ? url.toString() : "");
+
+                // Если это наш собственный запрос — сразу пропускаем
+                if (requestUrl.includes('byVectorserver')) {
+                    return await originalFetch(url, options);
+                }
+
+                let trackIdFromBody = null;
 
                 if (requestUrl.includes('/plays')) {
                     if (url instanceof Request) {
@@ -544,19 +537,22 @@
                             try {
                                 const id = JSON.parse(t).plays?.[0]?.trackId;
                                 if (id) this.handleBackgroundData(id, null);
-                            } catch(e) {}
+                            } catch (e) {
+                            }
                         });
                     } else if (typeof options?.body === 'string') {
                         try {
                             trackIdFromBody = JSON.parse(options.body).plays?.[0]?.trackId;
-                        } catch(e) {}
+                        } catch (e) {
+                        }
                     }
                 }
 
                 const response = await originalFetch(url, options);
+                const clonedForBackground = response.clone();
 
                 setTimeout(() => {
-                    this.handleBackgroundData(trackIdFromBody, response.clone());
+                    this.handleBackgroundData(trackIdFromBody, clonedForBackground);
                 }, 0);
 
                 return response;

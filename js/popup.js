@@ -92,6 +92,7 @@ const uiUpdater = {
     },
 
     updateTrackInfo(parsedData, appYa_tabID, cQR) {
+        console.log('updateTrackInfo',parsedData, appYa_tabID, cQR)
         if (!parsedData.appYa_cureitTrack) {
             document.querySelector('body .container-fluid').innerHTML =
                 'Включите трек, Яндекс Музыки, потом вернитесь сюда)';
