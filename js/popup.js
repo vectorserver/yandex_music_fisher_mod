@@ -101,18 +101,23 @@ const uiUpdater = {
 
         workPanel.style.display = 'flex';
         const track = parsedData.appYa_cureitTrack.trackinfo;
-        const imageURL = `https://${track.coverUri.replace(/%%/g, cQR)}`;
+        const coverUri = track.coverUri ?? track.albums?.[0]?.coverUri;
+        const imageURL = coverUri ? `https://${coverUri.replace(/%%/g, cQR)}` : '';
         const artists = track.artists.map((item) => item.name).join(', ');
         const albums = track.albums.map((item) => item.year).join(', ');
 
         document.getElementById('trackName').innerText = track.title;
         document.getElementById('artistsList').innerHTML = `${artists}<br>${albums}`;
-        document.getElementById('trackImage').src = imageURL;
+        if (imageURL) {
+            document.getElementById('trackImage').src = imageURL;
+        }
 
         //section.style.backgroundColor = track.derivedColors.average;
         //section.style.color = track.derivedColors.waveText;
         //playlistPanelMetaDownloadBtn.style.backgroundColor = track.derivedColors.miniPlayer;
-        document.querySelector('#trackPanel').style.backgroundColor = track.derivedColors.accent;
+        if (track.derivedColors?.accent) {
+            document.querySelector('#trackPanel').style.backgroundColor = track.derivedColors.accent;
+        }
 
         document.getElementById('downloadButton').addEventListener('click', () => {
             eventHandlers.downloadTracks(appYa_tabID, [track.id], 'music');

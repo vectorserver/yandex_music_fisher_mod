@@ -319,18 +319,27 @@
                 const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality') ?? '400';
                 let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
 
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq); // Подставляем размер
-                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq); // Подставляем размер
+                const coverUrl = trackInfo.albums[0]?.coverUri?.replace('%%', qq); // Подставляем размер
+                const artistUrl = trackInfo.artists[0]?.cover?.uri?.replace('%%', qq); // Подставляем размер
 
-                const coverResponse = await fetch(`https://${coverUrl}`);
-                const artistcoverResponse = await fetch(`https://${artistUrl}`);
-
-                if (!coverResponse.ok) {
-                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText}`);
+                // Загружаем обложку альбома, только если она есть
+                let coverData = null;
+                if (coverUrl) {
+                    const coverResponse = await fetch(`https://${coverUrl}`);
+                    if (!coverResponse.ok) {
+                        throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText}`);
+                    }
+                    coverData = new Uint8Array(await coverResponse.arrayBuffer());
                 }
 
-                const coverData = new Uint8Array(await coverResponse.arrayBuffer());
-                const artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
+                // Загружаем логотип артиста, только если он есть
+                let artistcoverResponseData = null;
+                if (artistUrl) {
+                    const artistcoverResponse = await fetch(`https://${artistUrl}`);
+                    if (artistcoverResponse.ok) {
+                        artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
+                    }
+                }
 
                 // Обновляем метаданные
                 const writer = new ID3Writer(mp3Data);
@@ -343,19 +352,25 @@
                     .setFrame('TALB', trackInfo.albums[0].title) // Альбом
                     .setFrame('TYER', trackInfo.albums[0].year) // Год выпуска
                     .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown']) // Жанр (например, "Pop", "Rock")
-                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`) //TPOS (позиция трека в альбоме)
-                    //Обложка альбома (спереди)
-                    .setFrame('APIC', {
+                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`); //TPOS (позиция трека в альбоме)
+
+                // Обложка альбома (спереди) — только если загружена
+                if (coverData) {
+                    writer.setFrame('APIC', {
                         type: 3,
                         data: coverData,
                         description: 'Cover (front)'
-                    })// Логотип группы/артиста
-                    .setFrame('APIC', {
+                    });
+                }
+                // Логотип группы/артиста — только если загружен
+                if (artistcoverResponseData) {
+                    writer.setFrame('APIC', {
                         type: 17, // Band/Artist Logotype
                         data: artistcoverResponseData,
                         description: 'Band Logo'
-                    })
-                    .addTag();
+                    });
+                }
+                writer.addTag();
 
                 console.log('appYa_trackInfo_writer', (writer));
 
