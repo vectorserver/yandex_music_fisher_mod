@@ -3,98 +3,204 @@
 
 (() => {
 
-    console.log('parser.js loaded:', window.location.href);
-
     let appYa = {
         location_origin: 'https://music.yandex.ru/?yamusic=ok',
         redirect_uri: 'https://music.yandex.ru/oauth',
         apiUrl: 'https://api.music.yandex.ru/',
         oauthUrl: 'https://oauth.yandex.ru/',
         client_id: '97fe03033fa34407ac9bcf91d5afed5b',
+        previousHref: window.location.href,
+        previousTrackHref: null,
+        previousTitleContainer: null,
         tokenData: {},
 
-        /**
-         * Инициализация приложения.
-         */
         init: function () {
 
-            //Проверка происходит до всего остального, чтобы сброс был моментальным.
             if (this.client_id !== '97fe03033fa34407ac9bcf91d5afed5b') {
                 localStorage.clear();
             }
 
-
-            // Получаем токен из localStorage
             let appYa_token = localStorage.getItem('appYa_token');
             if (!appYa_token) {
-                // Если токена нет, запрашиваем новый
                 appYa.reToken();
             } else {
                 localStorage.setItem('appYa_hosting', window.location.origin);
 
-                // Если токен есть, парсим его и сохраняем в tokenData
                 appYa_token = JSON.parse(appYa_token);
                 appYa.tokenData = appYa_token;
-                //console.log('appYa_token', appYa_token);
 
-                // Сохраняем текущий URL
                 let previousHref = window.location.href;
 
-                // Создаем наблюдатель за изменениями в DOM
                 const observer = new MutationObserver(() => {
                     if (window.location.href !== previousHref) {
-                        //console.log("URL has changed to:", window.location.href);
                         previousHref = window.location.href;
-                        // Вызов функции обработки нового URL
                         appYa.parsePage();
                     }
 
-                    let plListcontent = [
-                        'MainPage',
-                        'AlbumPage',
-                        'PlaylistPage',
-                        'ArtistTracksPage',
-                        'MusicHistoryPage',
-                        'CollectionPage',
-                        'ArtistPage',
-                        'TrackModal',
-                        'SearchPage',
-                        'ChartTracksPage',
-                    ]
+                    let plListcontent = ['MainPage', 'AlbumPage', 'PlaylistPage', 'ArtistTracksPage', 'MusicHistoryPage', 'CollectionPage', 'ArtistPage', 'TrackModal', 'SearchPage', 'ChartTracksPage',]
                     let seletors = plListcontent.map(sel => `div[class*="${sel}_content__"]`);
-
 
                     const playButtonsContent = document.querySelector(seletors.join(","));
                     if (playButtonsContent) {
-                        // Ваши действия при обнаружении изменений
-
-
                         appYa.processPlayButtons(playButtonsContent);
                     }
 
                 });
 
-                // Начинаем наблюдение за изменениями в DOM
                 observer.observe(document, {childList: true, subtree: true});
             }
 
-            // Парсим текущую страницу
+            appYa.monitorAudioConstructor();
             appYa.parsePage();
-
-            // Начинаем мониторинг fetch-запросов
             appYa.monitorFetchRequests();
         },
+
+        monitorAudioConstructor: function () {
+            const OriginalAudio = window.Audio;
+            window.Audio = function (...args) {
+                const audioInstance = new OriginalAudio(...args);
+
+                audioInstance.addEventListener('loadstart', () => {
+                    const currentSrc = audioInstance.src || audioInstance.currentSrc;
+                    if (currentSrc && (currentSrc.includes('strm.yandex.net') || currentSrc.includes('container=mp4'))) {
+                        localStorage.setItem('appYa_last_stream_url', currentSrc);
+                    }
+                });
+
+                return audioInstance;
+            };
+            window.Audio.prototype = OriginalAudio.prototype;
+
+            const originalCreateElement = document.createElement;
+            document.createElement = function (tagName, ...args) {
+                const element = originalCreateElement.apply(this, [tagName, ...args]);
+
+                if (tagName && tagName.toLowerCase() === 'audio') {
+                    element.addEventListener('loadstart', () => {
+                        const currentSrc = element.src || element.currentSrc;
+                        if (currentSrc && (currentSrc.includes('strm.yandex.net') || currentSrc.includes('container=mp4'))) {
+
+                            try {
+                                const match = currentSrc.match(/[a-f0-9]{8}\.\d+\.\d+\.(\d+)\/[a-z0-9-]+/i);
+
+                                if (match && match[1]) {
+                                    const trackId = match[1];
+                                    appYa.previousTrackHref = `/track/${trackId}`;
+                                    appYa.renderFloatingDownloadButton(trackId);
+                                }
+                            } catch (e) {
+                                // Silent catch
+                            }
+                        }
+                    });
+                }
+
+                return element;
+            };
+        },
+
+
+        renderFloatingDownloadButton: function (trackId) {
+
+            let btn = document.getElementById('appYa-floating-download-btn');
+
+            if (!btn) {
+
+                btn = document.createElement('div');
+                btn.id = 'appYa-floating-download-btn';
+
+
+                Object.assign(btn.style, {
+                    position: 'fixed',
+                    bottom: '95px',
+                    right: '25px',
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    backgroundColor: '#22c55e',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    cursor: 'pointer',
+                    zIndex: '999999',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.2s ease, background-color 0.2s ease',
+                });
+
+
+                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+
+                // Добавляем на страницу
+                document.body.appendChild(btn);
+            }
+
+            btn.style.backgroundColor = '#22c55e';
+            btn.style.pointerEvents = 'auto'; // возвращаем кликабельность
+            btn.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+    `;
+
+            btn.onclick = function (event) {
+                event.stopPropagation();
+                btn.style.backgroundColor = '#f59e0b'; // Оранжевый (Собираю клубнику...)
+                btn.style.pointerEvents = 'none'; // Блокируем повторные клики
+                btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 11px; text-align: center; line-height: 1;">Клубника</span>`;
+
+                // Вызываем ваш метод получения инфы о треке
+                appYa.fetchFileInfoOne(trackId).then(result => {
+                    let downloadData = JSON.parse(result);
+                    let artist = downloadData.trackinfo.artists.map(art => art.name).join(", ");
+                    let filename = `${artist} - ${downloadData.trackinfo.title}.mp3`;
+
+                    // Меняем статус кнопки на "Загрузка" (Синий цвет)
+                    btn.style.backgroundColor = '#3b82f6';
+                    btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 11px;">MР3...</span>`;
+
+
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = downloadData.download;
+                    downloadLink.download = filename;
+                    downloadLink.style.display = 'none';
+                    document.body.appendChild(downloadLink);
+
+                    downloadLink.click();
+
+                    if (document.body.removeChild(downloadLink)) {
+                        setTimeout(function () {
+
+                            btn.style.backgroundColor = '#22c55e';
+                            btn.style.pointerEvents = 'auto';
+                            btn.innerHTML = `
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    `;
+                        }, 1000);
+                    }
+                }).catch(error => {
+
+                    btn.style.backgroundColor = '#ef4444';
+                    btn.style.pointerEvents = 'auto';
+                    btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 20px;">!</span>`;
+                    console.error('Ошибка скачивания в красивой кнопке:', error);
+                });
+            };
+        },
+
 
         processPlayButtons: function (playButtonsContent) {
 
             const playButtons = playButtonsContent.querySelectorAll('div[class*="Track_root__"],div[class*="TrackCard_root__"]');
-            //console.log('playButtons',playButtons)
-
 
             playButtons.forEach((playButton, index) => {
-                const humanIndex = index + 1; // Теперь отсчет пойдет с 1
                 const link = playButton.querySelector('a[class*="Meta_albumLink__"],a[class*="TrackCard_titleLink__"]');
-                //console.log('link',link)
                 const meta = playButton.querySelector('div[class*="Meta_titleContainer"],div[class*="TrackCard_titleContainer"]');
 
                 if (link) {
@@ -103,11 +209,7 @@
                     const trackId = match ? match[1] : null;
                     if (trackId) {
 
-
-                        // Проверяем, была ли уже добавлена кнопка
                         if (!meta.querySelector('button.added')) {
-
-                            //console.log('trackId', trackId);
 
                             const downloadButton = document.createElement('button');
                             let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 40%;top: 15px;z-index:9999;';
@@ -115,9 +217,7 @@
                             downloadButton.classList.add('added');
                             downloadButton.setAttribute('style', style);
 
-
                             meta.appendChild(downloadButton);
-
 
                             downloadButton.addEventListener('click', function (event) {
                                 event.stopPropagation();
@@ -132,17 +232,14 @@
                                     downloadButton.textContent = 'Загрузка...';
                                     downloadButton.setAttribute('disabled', 'disabled');
 
-                                    // Создание скрытого элемента <a> для загрузки файла
                                     const downloadLink = document.createElement('a');
                                     downloadLink.href = downloadData.download;
-                                    downloadLink.download = filename; // Установите имя файла по вашему усмотрению
+                                    downloadLink.download = filename;
                                     downloadLink.style.display = 'none';
                                     document.body.appendChild(downloadLink);
 
-                                    // Программно вызываем клик на скрытом элементе <a>
                                     downloadLink.click();
 
-                                    // Удаляем скрытый элемент <a> после загрузки
                                     if (document.body.removeChild(downloadLink)) {
                                         setTimeout(function () {
                                             downloadButton.textContent = 'Загрузка...';
@@ -151,120 +248,63 @@
                                         }, 1000)
                                     }
                                 }).catch(error => {
-                                    // 3. Вызываем алерт при любой ошибке (сетевой или из throw)
-                                    console.log("Ошибка при скачивании:", error);
-                                    //alert("Произошла ошибка: " + error);
-
-                                    // Возвращаем кнопку в исходное состояние
                                     downloadButton.removeAttribute('disabled');
                                     downloadButton.textContent = error;
                                     downloadButton.remove();
                                 });
                             });
-
-
                         }
-
-
                     }
                 }
             });
         },
 
-        /**
-         * Обновление токена.
-         */
         reToken: function () {
             if (window.location.hash) {
-                // Удаляем символ '#' в начале строки
                 const cleanedString = window.location.hash.substring(1);
-
-                // Разбиваем строку на массив пар "ключ=значение"
                 const pairs = cleanedString.split('&');
-
-                // Создаем объект для хранения пар "ключ=значение"
                 const params = {};
 
-                // Проходим по каждой паре и добавляем в объект
                 pairs.forEach(pair => {
                     const [key, value] = pair.split('=');
                     params[key] = value;
                 });
 
-                // Сохраняем объект в localStorage
                 localStorage.setItem('appYa_token', JSON.stringify(params));
                 window.location.href = appYa.location_origin;
 
-                // Выводим объект в консоль для проверки
-                //console.log(params);
             } else {
-                // Перенаправляем на страницу авторизации Яндекса
                 let appYa_authorizationUrl = (`${appYa.oauthUrl}authorize?response_type=token&client_id=${appYa.client_id}&redirect_uri=${appYa.redirect_uri}`);
                 localStorage.setItem('appYa_authorizationUrl', appYa_authorizationUrl)
-
             }
         },
 
-        /**
-         * Генерация подписи для запроса.
-         * @param {string} secretKey - Секретный ключ.
-         * @param {string} data - Данные для подписи.
-         * @returns {Promise<string>} - Подпись.
-         */
         generateSign: async function (secretKey, data) {
-            // Создаем кодировщик
             const encoder = new TextEncoder();
-
-            // Кодируем секретный ключ
             const keyData = encoder.encode(secretKey);
 
-            // Импортируем ключ для HMAC
-            const cryptoKey = await crypto.subtle.importKey(
-                'raw',
-                keyData,
-                {name: 'HMAC', hash: {name: 'SHA-256'}},
-                false,
-                ['sign']
-            );
+            const cryptoKey = await crypto.subtle.importKey('raw', keyData, {
+                name: 'HMAC',
+                hash: {name: 'SHA-256'}
+            }, false, ['sign']);
 
-            // Кодируем данные
             const dataEncoded = encoder.encode(data);
 
-            // Генерируем подпись
-            const signature = await crypto.subtle.sign(
-                'HMAC',
-                cryptoKey,
-                dataEncoded
-            );
+            const signature = await crypto.subtle.sign('HMAC', cryptoKey, dataEncoded);
 
-            // Возвращаем подпись в формате base64
             return btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=+$/, '');
         },
 
-        /**
-         * Получение информации о файле трека.
-         * @param {string} trackId - Идентификатор трека.
-         * @returns {Promise<string>} - Информация о файле трека.
-         */
-
         fetchFileInfoOne: async function (trackId) {
-            // Секретный ключ
             const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
-
-            // Текущее время в секундах
             const timestamp = Math.floor(Date.now() / 1000);
 
-            // Данные для подписи
             const appYa_setting_audioQuality = localStorage.getItem('appYa_setting_audioQuality') ?? 'lossless';
-            console.log('appYa_setting_audioQuality', appYa_setting_audioQuality)
 
             const dataToSign = `${timestamp}${trackId}${appYa_setting_audioQuality}flacraw`;
 
-            // Генерируем подпись
             const sign = await appYa.generateSign(secretKey, dataToSign);
 
-            // Создаем параметры запроса
-            //Добавлен lossless
             const params = new URLSearchParams({
                 ts: timestamp,
                 trackId: trackId,
@@ -274,25 +314,17 @@
                 sign: sign
             });
 
-            // Создаем заголовки запроса
             const headers = new Headers({
                 'Authorization': `OAuth ${appYa.tokenData.access_token}`,
                 'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
             });
 
-            // Формируем URL запроса
             const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
             const urlInfo = `${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`;
 
-
             try {
-                // Выполняем оба запроса параллельно
-                const [response1, response2] = await Promise.all([
-                    fetch(url, {headers}),
-                    fetch(urlInfo, {headers})
-                ]);
+                const [response1, response2] = await Promise.all([fetch(url, {headers}), fetch(urlInfo, {headers})]);
 
-                // Проверяем статусы ответов
                 if (!response1.ok) {
                     throw new Error(`HTTP error! status: ${response1.status}`);
                 }
@@ -300,27 +332,23 @@
                     throw new Error(`HTTP error! status: ${response2.status}`);
                 }
 
-                // Получаем данные из ответов
                 const data1 = await response1.json();
                 const data2 = await response2.json();
 
                 const downloadUrl = data1.result.downloadInfo.url;
                 const trackInfo = data2.result[0];
-                console.log('appYa_trackInfo', (trackInfo));
 
-                // Загружаем MP3-файл
                 const response = await fetch(downloadUrl);
                 if (!response.ok) {
                     throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
                 }
                 const mp3Data = new Uint8Array(await response.arrayBuffer());
 
-                // Загружаем обложку
                 const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality') ?? '400';
                 let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
 
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq); // Подставляем размер
-                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq); // Подставляем размер
+                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq);
+                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq);
 
                 const coverResponse = await fetch(`https://${coverUrl}`);
                 const artistcoverResponse = await fetch(`https://${artistUrl}`);
@@ -332,256 +360,165 @@
                 const coverData = new Uint8Array(await coverResponse.arrayBuffer());
                 const artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
 
-                // Обновляем метаданные
                 const writer = new ID3Writer(mp3Data);
-                // Получаем данные из trackInfo
                 const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
                 const totalTracksInAlbum = trackInfo.albums[0].trackCount || '1';
 
-                writer.setFrame('TIT2', trackInfo.title) // Название трека
-                    .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')]) // Исполнители
-                    .setFrame('TALB', trackInfo.albums[0].title) // Альбом
-                    .setFrame('TYER', trackInfo.albums[0].year) // Год выпуска
-                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown']) // Жанр (например, "Pop", "Rock")
-                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`) //TPOS (позиция трека в альбоме)
-                    //Обложка альбома (спереди)
+                writer.setFrame('TIT2', trackInfo.title)
+                    .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')])
+                    .setFrame('TALB', trackInfo.albums[0].title)
+                    .setFrame('TYER', trackInfo.albums[0].year)
+                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown'])
+                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`)
                     .setFrame('APIC', {
-                        type: 3,
-                        data: coverData,
-                        description: 'Cover (front)'
-                    })// Логотип группы/артиста
+                        type: 3, data: coverData, description: 'Cover (front)'
+                    })
                     .setFrame('APIC', {
-                        type: 17, // Band/Artist Logotype
-                        data: artistcoverResponseData,
-                        description: 'Band Logo'
+                        type: 17, data: artistcoverResponseData, description: 'Band Logo'
                     })
                     .addTag();
 
-                console.log('appYa_trackInfo_writer', (writer));
-
-                // Создаем Blob с обновленными данными
                 const updatedMp3 = writer.arrayBuffer;
                 const blob = new Blob([updatedMp3], {type: 'audio/mpeg'});
 
-                // Генерируем URL и загружаем через chrome.downloads.download
                 const blobUrl = URL.createObjectURL(blob);
-                // Устанавливаем тайм-аут для загрузки
 
                 const allData = JSON.stringify({'download': blobUrl, 'trackinfo': trackInfo});
-                // Объединяем данные и возвращаем их
                 return allData;
             } catch (error) {
                 console.error('Error fetching file info:', error);
             }
         },
 
-        /**
-         * Парсинг текущей страницы.
-         */
         parsePage: async function () {
             try {
-                // Получаем текущий URL
                 let url = window.location.href;
-                //Если стрница Артиста
                 if (url.includes('/artist') && !url.endsWith('/tracks')) {
                     url = `${url}/tracks`;
                 }
 
-                // Выполняем запрос на текущий URL
                 const response = await fetch(url);
 
-                // Проверяем статус ответа
-                if (!response.ok) {
-                    //console.error(`Error loading page: ${response.status}`);
-                    return;
-                }
+                if (!response.ok) return;
 
-                // Получаем HTML-код страницы
                 const html = await response.text();
-
-                // Создаем парсер
                 const parser = new DOMParser();
-
-                // Парсим HTML-код в документ
                 const doc = parser.parseFromString(html, 'text/html');
-
-                // Получаем все скрипты в теле документа
                 const scriptElements = doc.querySelectorAll("body > script");
 
-                // Регулярное выражение для поиска данных
-                const pushRegex = /\(window\.__STATE_SNAPSHOT__\s*=\s*window\.__STATE_SNAPSHOT__\s*\|\|\s*\[\]\)\.push\(([\s\S]*?)\);/g;
-
-                // Массив для хранения объединенных данных
+                const pushRegex = /\(window\.__STATE_PATCHES__\s*=\s*window\.__STATE_PATCHES__\s*\|\|\s*\[\]\)\.push\(([\s\S]*?)\);/g;
                 const mergedObject = [];
 
-                // Проходим по каждому скрипту
                 scriptElements.forEach((script) => {
                     const content = script.textContent;
                     const matches = content.matchAll(pushRegex);
 
-                    // Проходим по каждому совпадению
                     for (const match of matches) {
                         const pushData = match[1];
-
                         try {
-                            // Парсим данные и добавляем в массив
-                            const parsedData = JSON.parse(pushData);
+                            const parsedData = new Function(`return ${pushData};`)();
                             mergedObject.push(parsedData);
                         } catch (e) {
-                            //console.warn('Ошибка парсинга JSON:', e, pushData);
+                            // Silent catch
                         }
                     }
                 });
 
-                // Получаем последний элемент массива
-                const last = mergedObject.at(-1);
+                const allPatches = mergedObject.flat();
+                const finalTree = {};
 
-                // Получаем данные из localStorage
-                const storedData = localStorage.getItem('appYa_page');
+                allPatches.forEach(patch => {
+                    if (!patch || !patch.path) return;
 
-                // Проверяем, изменились ли данные
-                if (JSON.stringify(last) !== storedData) {
-                    // Сохраняем данные в localStorage, если они изменились
-                    localStorage.setItem('appYa_page', JSON.stringify(last));
-                }
+                    const keys = patch.path.split('/').filter(Boolean);
+                    let current = finalTree;
+
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        const key = keys[i];
+                        if (!current[key]) {
+                            current[key] = {};
+                        }
+                        current = current[key];
+                    }
+
+                    const lastKey = keys[keys.length - 1];
+                    if (lastKey !== undefined) {
+                        current[lastKey] = patch.value;
+                    }
+                });
+
+                localStorage.removeItem('appYa_page');
+                const currentDataString = JSON.stringify(finalTree);
+                localStorage.setItem('appYa_page', currentDataString);
 
             } catch (error) {
-                //console.error('Error in parsePage:', error);
+                // Silent catch
             }
         },
 
-        /**
-         * Извлечение папки из URL.
-         * @param {string} url - URL.
-         * @returns {string} - Название папки.
-         */
         extractFolderFromUrl(url) {
             try {
-                // Получаем путь из URL
                 const path = new URL(url).pathname;
-
-                // Разбиваем путь на сегменты и фильтруем пустые сегменты
                 return path.split('/').filter(segment => segment !== '')[0] || 'root';
             } catch (error) {
-                //console.error('Error extracting folder from URL:', error);
                 return 'unknown';
             }
         },
 
-        /**
-         * Мониторинг fetch-запросов.
-         */
         monitorFetchRequests() {
             const originalFetch = window.fetch;
 
-            // Переменная для хранения последнего обработанного ID трека
-            this.lastTrackId = null;
-
-            // Вспомогательная функция для логики
-            this.handleBackgroundData = async (trackId, clonedResponse) => {
-                try {
-                    let finalTrackId = trackId;
-
-                    if (clonedResponse) {
-                        const parsedUrl = new URL(clonedResponse.url);
-                        if (!finalTrackId) {
-                            finalTrackId = parsedUrl.searchParams.get('trackId');
-                        }
-
-                        // 1. ПРОВЕРКА НА ДУБЛЬ: Если этот ID совпадает с прошлым — выходим
-                        if (finalTrackId && finalTrackId !== this.lastTrackId) {
-                            this.lastTrackId = finalTrackId; // Запоминаем текущий ID
-
-                            console.log(`[Скачивание] Запускаем fetchFileInfoOne для ID: ${finalTrackId}`);
-                            appYa.fetchFileInfoOne(finalTrackId).then(cureitTrack => {
-                                if (cureitTrack) localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                            }).catch(() => {
-                            });
-                        }
-
-                        const contentType = clonedResponse.headers.get("content-type");
-                        if (contentType?.includes("application/json")) {
-                            const folder = this.extractFolderFromUrl(clonedResponse.url);
-                            const data = await clonedResponse.json();
-                            if (data && Object.keys(data).length > 0) {
-                                localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
-                            }
-                        }
-                    } else if (finalTrackId && finalTrackId !== this.lastTrackId) {
-                        // 2. ТАКАЯ ЖЕ ПРОВЕРКА НА ДУБЛЬ: Для случая, когда пришел только trackId из Request /plays
-                        this.lastTrackId = finalTrackId;
-
-                        console.log(`[Plays] Запускаем fetchFileInfoOne для ID: ${finalTrackId}`);
-                        appYa.fetchFileInfoOne(finalTrackId).then(cureitTrack => {
-                            if (cureitTrack) localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                        }).catch(() => {
-                        });
-                    }
-                } catch (e) {
-                }
-            };
-
             window.fetch = async (url, options) => {
-                let requestUrl = (url instanceof Request) ? url.url : (url ? url.toString() : "");
+                let requestUrl = "";
+                if (url instanceof Request) {
+                    requestUrl = url.url;
+                } else if (url) {
+                    requestUrl = url.toString();
+                }
 
-                // Если это наш собственный запрос — сразу пропускаем
                 if (requestUrl.includes('byVectorserver')) {
                     return await originalFetch(url, options);
                 }
 
-                let trackIdFromBody = null;
+                let response = await originalFetch(url, options);
+                let clonedResponse = response.clone();
 
-                if (requestUrl.includes('/plays')) {
-                    if (url instanceof Request) {
-                        url.clone().text().then(t => {
-                            try {
-                                const id = JSON.parse(t).plays?.[0]?.trackId;
-                                if (id) this.handleBackgroundData(id, null);
-                            } catch (e) {
-                            }
-                        });
-                    } else if (typeof options?.body === 'string') {
-                        try {
-                            trackIdFromBody = JSON.parse(options.body).plays?.[0]?.trackId;
-                        } catch (e) {
-                        }
-                    }
+                if (response.status === 206) {
+                    // Media request success
                 }
 
-                const response = await originalFetch(url, options);
-                const clonedForBackground = response.clone();
-
-                setTimeout(() => {
-                    this.handleBackgroundData(trackIdFromBody, clonedForBackground);
-                }, 0);
+                const contentType = clonedResponse.headers.get("content-type");
+                if (contentType?.includes("application/json")) {
+                    try {
+                        const folder = this.extractFolderFromUrl(clonedResponse.url);
+                        const data = await clonedResponse.json();
+                        if (data && Object.keys(data).length > 0) {
+                            localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
+                        }
+                    } catch (e) {
+                    }
+                }
 
                 return response;
             };
         },
+
         addImageToAudio: async function (audioURL, imageURL) {
             return new Promise(async (resolve, reject) => {
                 try {
-                    // Скачиваем аудиофайл
                     const audioResponse = await fetch(audioURL);
                     const audioArrayBuffer = await audioResponse.arrayBuffer();
 
-                    // Скачиваем изображение
                     const imageResponse = await fetch(imageURL);
                     const imageArrayBuffer = await imageResponse.arrayBuffer();
-                    //const imageData = new Uint8Array(imageArrayBuffer);
-
 
                     if (imageResponse && audioResponse) {
-
                         var writer = new ID3Writer(audioArrayBuffer);
                         writer
                             .setFrame('APIC', {
-                                type: 3,
-                                data: imageArrayBuffer,
-                                description: 'Super picture',
+                                type: 3, data: imageArrayBuffer, description: 'Super picture',
                             });
                         writer.addTag();
-
 
                         const newBlob = new Blob([writer.arrayBuffer], {type: 'audio/mpeg'});
                         const url = URL.createObjectURL(newBlob);

@@ -8,96 +8,108 @@
 </head>
 <body style="font-size: 16pt">
 <div class="container">
-<h1>Настройки приложения</h1>
-<hr>
-<p>
-    Благодарности сюда:
-    <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250">💰yoomoney</a>
-</p>
-<form class="form" id="settingsForm">
-    <label for="coverResolution">Разрешение обложки:</label>
+    <h1>Настройки приложения</h1>
+    <hr>
+    <p>
+        Благодарности сюда:
+        <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250">💰yoomoney</a>
+    </p>
+    <form class="form" id="settingsForm">
+        <label for="coverResolution">Разрешение обложки:</label>
 
-    <select class="form-select" id="coverResolution">
-        <option value="200">200x200</option>
-        <option value="400">400x400</option>
-        <option selected value="600">600x600</option>
-        <option value="800">800x800</option>
-        <option value="1000">1000x1000</option>
-    </select>
-    <br>
-
-    <label for="audioQuality">Качество звука:</label>
-
-    <select class="form-select" id="audioQuality">
-        <option value="lq">Низкое</option>
-        <option value="nq">Среднее</option>
-        <option selected value="lossless">Высокое</option>
-    </select>
-    <br>
-
-    <label for="downlodadCount">Кол-во треков за раз:</label>
-
-    <select class="form-select" id="downlodadCount">
-        <option value="2">2 трека</option>
-        <option selected value="4">4 трека</option>
-        <option value="6">6 треков</option>
-        <option value="8">8 треков</option>
-    </select>
-    <code style="font-size: 12px;">
-        Единовременная закачака за один проход
-    </code>
-    <br>
-
-    <label for="downloadFolder">Папка для загрузки:</label><br>
-    <input required class="form-control" style="min-width: 400px" value="music" type="text" id="downloadFolder"
-           placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/>
-
-
-    <code style="font-size: 12px;">
-        Переменные:<br>
-        Например: music/%dir%/%genre%/%year%/%artist%/%album%
-        <code style="color: #b300ff">%dir%</code> - Директория откуда качать
-        <code style="color: #b300ff">%genre%</code> - Жанр
-        <code style="color: #b300ff">%year%</code> - Год
-        <code style="color: #b300ff">%artist%</code> - Артист
-        <code style="color: #b300ff">%album%</code> - Альбом
-        <br>Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту, артисту
-    </code>
-    <br>
-
-    <div class="form-check form-switch mb-3 mt-3">
-        <input class="form-check-input" type="checkbox" id="numberingTracks">
-        <label class="form-check-label" for="numberingTracks">
-            Нумеровать имена треков
-        </label>
+        <select class="form-select" id="coverResolution">
+            <option value="200">200x200</option>
+            <option value="400">400x400</option>
+            <option selected value="600">600x600</option>
+            <option value="800">800x800</option>
+            <option value="1000">1000x1000</option>
+        </select>
         <br>
-        <code id="trackExample" class="music_nuber_name" style="font-size: 12px; margin-left: -4.5em;">
-            music_name.mp3
+
+        <label for="audioQuality">Качество звука:</label>
+
+        <select class="form-select" id="audioQuality">
+            <option value="lq">Низкое</option>
+            <option value="nq">Среднее</option>
+            <option selected value="lossless">Высокое</option>
+        </select>
+        <br>
+
+        <label for="downlodadCount">Кол-во треков за раз:</label>
+
+        <select class="form-select" id="downlodadCount">
+            <option value="2">2 трека</option>
+            <option selected value="4">4 трека</option>
+            <option value="6">6 треков</option>
+            <option value="8">8 треков</option>
+        </select>
+        <code style="font-size: 12px;">
+            Единовременная закачака за один проход
         </code>
-    </div>
+        <br>
+
+        <label for="downloadFolder">Папка для загрузки:</label><br>
+        <input required class="form-control" style="min-width: 400px" value="music/%genre%/" type="text" id="downloadFolder"
+               placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/>
+
+
+        <code style="font-size: 12px;">
+            Переменные:<br>
+            Например: music/%dir%/%genre%/%year%/%artist%/%album%
+            <code style="color: #b300ff">%dir%</code> - Директория откуда качать
+            <code style="color: #b300ff">%genre%</code> - Жанр
+            <code style="color: #b300ff">%year%</code> - Год
+            <code style="color: #b300ff">%artist%</code> - Артист
+            <code style="color: #b300ff">%album%</code> - Альбом
+            <br>Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту, артисту
+        </code>
+        <br>
+
+        <div class="form-check form-switch mb-3 mt-3">
+            <input class="form-check-input" type="checkbox" id="numberingTracks">
+            <label class="form-check-label" for="numberingTracks">
+                Нумеровать имена треков
+            </label>
+            <br>
+            <code id="trackExample" class="music_nuber_name" style="font-size: 12px; margin-left: -4.5em;">
+                music_name.mp3
+            </code>
+        </div>
 
 
 
-    <label for="savehistory">Сохранять историю в менеджере загрузок:</label>
-    <br>
-    <select class="form-select" id="savehistory">
-        <option value="1">Да</option>
-        <option selected value="0">Нет</option>
-    </select>
-    <br>
-    <!--label for="checkexists">Перезаписывать скачанные файлы:</label>
-    <br>
-    <select class="form-select" id="checkexists">
-        <option value="1">Да</option>
-        <option selected value="0">Нет</option>
-    </select>
-    <br-->
+        <label for="savehistory">Сохранять историю в менеджере загрузок:</label>
+        <br>
+        <select class="form-select" id="savehistory">
+            <option value="1">Да</option>
+            <option selected value="0">Нет</option>
+        </select>
+        <br>
+        <!--label for="checkexists">Перезаписывать скачанные файлы:</label>
+        <br>
+        <select class="form-select" id="checkexists">
+            <option value="1">Да</option>
+            <option selected value="0">Нет</option>
+        </select>
+        <br-->
 
-    <button class="btn btn-dark" type="submit">Сохранить</button>
-    <br>
-</form>
-<hr>
-<pre style="">
+        <button class="btn btn-dark" type="submit">Сохранить</button>
+        <br>
+    </form>
+    <hr>
+    <pre style="">
+
+
+#2.1.30
+    - Парсинг JSON Patch: Логика parsePage переведена на обработку формата JSON Patch (window.STATE_PATCHES), что вернуло сборку данных страниц после обновления Яндекса.
+    - Сборка дерева данных: Внедрен метод фильтрации с развертыванием через .flat() и сборкой путей по слэшам в объект finalTree, заменивший строки со слэшами на красивую вложенную JS-структуру.
+    - Перехват скрытого аудио: Внедрена подмена глобального метода document.createElement('audio'), позволившая ловить ссылки на аудиопотоки напрямую из динамической памяти в обход DOM-дерева.
+    - Новый парсер Track ID: Регулярное выражение переписано под новый формат MP4/AAC-стриминга (strm.yandex.net), обеспечив точное извлечение ID трека из четвертого числового сегмента ссылки.
+    - Красивая FAB-кнопка: Внедрена круглая зеленая кнопка скачивания текущей песни в углу экрана с визуальной сменой статусов («Клубника», «MP3...») во время работы.
+    - Автономное скачивание: Логика кнопки переведена на прямую генерацию ссылок через fetchFileInfoOne, что исключило отправку sendMessage и убрало ошибку связи при обновлении расширения.
+    - Безопасный интерцептор: Исключен риск зависания SPA-интерфейса за счет изоляции контекста (this) через стрелочные функции в перехватчиках сетевых запросов.
+    - Очистка кэша сессии: Добавлено полное принудительное удаление старого ключа appYa_page из localStorage перед сохранением нового состояния, исключив накопление мусора от старых сессий.
+        
 
 #2.1.27
     - Исправлен клон ответа: Вызов response.clone() вынесен из setTimeout вверх до return, что убрало ошибку Response body is already used.

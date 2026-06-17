@@ -130,7 +130,11 @@ const uiUpdater = {
 
         if (playlist && playlist.items && playlist.meta) {
             const title = playlist.meta.title.replace(':', '_');
-            const trackIds = playlist.items.map(track => track.id);
+
+            const itemsArray = Object.values(playlist.items || {});
+            const trackIds = itemsArray.map(track => track.id);
+
+
             const totalTracks = trackIds.length;
 
             // Ищем или создаем контейнер для Range
