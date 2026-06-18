@@ -51,15 +51,15 @@ const downloadManager = {
 
         // Ждём результат get
         const settings = await chrome.storage.local.get('app_setting');
-
-        // Получаем путь из результата
+        
         let downloadFolder = settings?.app_setting?.downloadFolder || 'music';
-
-        // Очищаем: регулярка /[/\\]+$/ означает "найти один или несколько слэшей на конце строки"
         downloadFolder = downloadFolder.trim().replace(/[/\\]+$/, '');
 
-        // Формируем итоговый путь
-        playlistName = `${downloadFolder}/${playlistName}`;
+
+        let safePlaylistName = sanitizeFilename(playlistName) || 'playlist';
+
+        playlistName = `${downloadFolder}/${safePlaylistName}`;
+
 
         // Проверяем, содержит ли downloadFolder переменные
         const hasVariables = /%[^%]+%/.test(downloadFolder);
@@ -148,6 +148,20 @@ const downloadManager = {
                     });
                 })
             ));
+        }
+
+        function sanitizeFilename(text) {
+            if (!text) return 'unnamed';
+
+            return text
+                // 1. Удаляем скрытые символы и управляющие коды (0-31, 127-159)
+                .replace(/[\x00-\x1F\x7F-\x9F]/g, "")
+                // 2. Заменяем запрещенные в Windows/Unix спецсимволы на пробелы: \ / : * ? " < > |
+                .replace(/[\\/:*?"<>|]/g, " ")
+                // 3. Заменяем множественные пробелы на один одинарный
+                .replace(/\s+/g, " ")
+                // 4. Удаляем пробелы на концах строки
+                .trim();
         }
     },
 
