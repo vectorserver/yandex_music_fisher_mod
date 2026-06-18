@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Yandex Music Fisher mod by vectorserver",
-  "version": "2.1.30",
+  "version": "2.1.35",
   "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
   "icons": {
     "128": "icons/music_by_pancaza.png"

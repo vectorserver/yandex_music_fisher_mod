@@ -1,23 +1,174 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=500">
     <title>NEXT Yandex Music Fisher mod by vectorserver</title>
     <!-- Bootstrap CSS -->
     <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Компактный и современный темный стиль */
+        body {
+            background-color: #121214;
+            color: #e1e1e6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 8px;
+            margin: 0;
+            overflow: hidden; /* Убирает глобальный скроллбары */
+        }
+
         .container-fluid {
             width: 500px;
             max-width: 500px;
-            border-radius: 4px;
+            background: #18181c;
+            border-radius: 12px;
+            padding: 12px 14px 10px 14px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border: 1px solid #29292e;
+        }
+
+        /* Исправленная левая карточка с Flexbox распределением */
+        .card {
+            background: #202024 !important;
+            border: 1px solid #2e2e35 !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            height: 90%;
+        }
+
+        .card-body {
+            padding: 4px 0 0 0 !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1; /* Заставляет контент занять всё свободное место, двигая кнопку вниз */
+        }
+
+        /* Правая панель плейлиста */
+        #playlistPanel {
+            background: #202024 !important;
+            border: 1px solid #2e2e35 !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            height: 100%;
         }
 
         .img-fluid {
+            border-radius: 6px !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            max-height: 155px; /* Чуть уменьшили для идеального баланса высоты колонок */
+            width: 100%;
+            object-fit: cover;
+        }
+
+        /* Заголовки и текст */
+        strong, h1, h5, #playlistPanelTitle {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #a8a8b3;
+        }
+
+        .text-muted {
+            color: #a8a8b3 !important;
+        }
+
+        /* Кнопки */
+        .btn-warning, .btn-dark {
+            background-color: #ffcc00 !important;
+            border-color: #ffcc00 !important;
+            color: #121214 !important;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .btn-warning:hover, .btn-dark:hover {
+            background-color: #e6b800 !important;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+        }
+
+        .btn-outline-primary {
+            color: #ff5252;
+            border-color: #ff5252;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            padding: 5px;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #ff5252;
+            color: #fff;
+        }
+
+        .btn-outline-secondary {
+            color: #a8a8b3;
+            border-color: #2e2e35;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            padding: 5px;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #2e2e35;
+            color: #fff;
+        }
+
+        /* Ползунки инпутов */
+        input[type="range"] {
+            accent-color: #007acc;
+            height: 4px;
+        }
+
+        /* Технические блоки и футер */
+        code {
+            color: #62626a !important;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin-top: 4px;
+            margin-right: 10px;
+        }
+
+        code a {
+            color: #ffcc00;
+            text-decoration: none;
+        }
+
+        #tokenEnd {
+            color: #ff5252 !important;
+        }
+
+        #appv {
+            color: #00eb84;
+            font-weight: bold;
+        }
+
+        pre {
+            background: #121214;
+            color: #00eb84;
+            padding: 6px;
             border-radius: 4px;
+            font-size: 0.7rem;
+            border: 1px solid #2e2e35;
+            max-height: 55px;
+            margin-bottom: 6px;
+            overflow-y: auto;
         }
     </style>
+
+
 </head>
 <body>
 <section class="container-fluid">
@@ -40,62 +191,60 @@
                 <div id="trackPanel" class="card" style="width: 100%;">
                     <img id="trackImage" src="../icons/music_by_pancaza.png" class="card-img-top img-fluid"
                          alt="Track Image">
-                    <div class="card-body">
-                        <h5 id="trackName" class="text-center">Track Info</h5>
-                        <p id="artistsList" class="text-center text-muted">No track information available</p>
+                    <div class="card-body p-2">
+                        <h5 id="trackName" class="text-center mt-2 fs-6">Track Info</h5>
+                        <p id="artistsList" class="text-center text-muted small mb-2">No track information available</p>
                         <div class="d-grid gap-2">
-                            <a id="downloadButton" href="#" class="btn btn-dark  btn-sm">Скачать</a>
+                            <a id="downloadButton" href="#" class="btn btn-dark btn-sm">Скачать</a>
                         </div>
                     </div>
-
                 </div>
             </div>
             <div id="col2" class="col-6">
                 <div id="playlistPanel" style="width: 100%;">
-                    <strong id="playlistPanelTitle"></strong>
+                    <strong id="playlistPanelTitle">Плейлист</strong>
                     <img id="playlistPanelImage" src="../icons/music_by_pancaza.png" class="card-img-top img-fluid"
                          alt="Track Image">
                     <pre id="playlistPanelMeta"></pre>
                     <div>
-                    <button id="playlistPanelMetaDownloadBtn" style="display: none;" href="#" class="btn btn-dark btn-sm text-center position-relative">
-                        <span class="text">...</span>
-                        <span class="counter position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
-                    </button>
+                        <button id="playlistPanelMetaDownloadBtn" style="display: none;" href="#" class="btn btn-dark btn-sm text-center position-relative">
+                            <span class="text">...</span>
+                            <span class="counter position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+                        </button>
                     </div>
 
                     <div id="playlistPanelMetaotherData"></div>
                 </div>
             </div>
 
-            <div class="col-12 mt-1">
+            <div class="col-12 mt-3">
 
-                <div class="row g-2">
+                <div class="row g-2 mb-2">
                     <div class="col-6">
-                        <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-currency-ruble"></i> 💰Donat
+                        <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250" class="btn btn-outline-primary w-100 btn-sm">
+                            💰 Donat
                         </a>
                     </div>
                     <div class="col-6">
-                        <a href="#" id="open-settings" class="btn btn-outline-secondary w-100">
-                            <i class="bi bi-gear"></i> ⚙️Настройки
+                        <a href="#" id="open-settings" class="btn btn-outline-secondary w-100 btn-sm">
+                            ⚙️ Настройки
                         </a>
                     </div>
                 </div>
 
                 <code>
-                    By: <a target="_blank" href="https://vk.com/vectorserver">Vectorserver</a> <br>
+                    By: <a target="_blank" href="https://vk.com/vectorserver">Vectorserver</a>
                 </code>
                 <code>
-                    Token end: <code id="tokenEnd"></code> <a id="tokenEndUrl" href="#">UP</a> | version: 2.1.30
+                    Token end: <code id="tokenEnd" style="display:inline;"></code> <a id="tokenEndUrl" href="#">UP</a> | version: <span id="appv">2.1.30</span>
                 </code>
 
             </div>
         </div>
     </div>
 </section>
-<!-- Bootstrap JS Bundle (Optional, for advanced Bootstrap functionality) -->
+<!-- Bootstrap JS Bundle -->
 <script src="../html/bs5/browser-id3-writer.6.0.0.mjs"></script>
-
 <script src="../html/bs5/bootstrap.bundle.min.js"></script>
 <script src="../js/parser.js" defer></script>
 <script src="../js/popup.js" defer></script>

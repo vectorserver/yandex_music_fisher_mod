@@ -86,6 +86,17 @@
                                 if (match && match[1]) {
                                     const trackId = match[1];
                                     appYa.previousTrackHref = `/track/${trackId}`;
+
+                                    appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
+                                        if (cureitTrack){
+                                            localStorage.setItem('appYa_cureitTrack', cureitTrack);
+                                            console.log('appYa_cureitTrack',trackId)
+                                        }
+
+                                    }).catch(() => {
+                                    });
+
+
                                     appYa.renderFloatingDownloadButton(trackId);
                                 }
                             } catch (e) {

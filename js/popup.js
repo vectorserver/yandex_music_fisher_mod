@@ -1,6 +1,10 @@
 console.log('js/popup.js');
 
-
+const appVersion = document.getElementById('appv');
+const manifestData = chrome.runtime.getManifest();
+if (appVersion && manifestData.version) {
+    appVersion.textContent = manifestData.version;
+}
 const section = document.querySelector('section');
 const col_one = document.getElementById('col1');
 const col_two = document.getElementById('col2');
