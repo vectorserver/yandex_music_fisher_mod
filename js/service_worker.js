@@ -53,8 +53,13 @@ const downloadManager = {
         const settings = await chrome.storage.local.get('app_setting');
 
         // Получаем путь из результата
-        const downloadFolder = settings?.app_setting?.downloadFolder || 'music';
-        playlistName = downloadFolder + '/' + playlistName;
+        let downloadFolder = settings?.app_setting?.downloadFolder || 'music';
+
+        // Очищаем: регулярка /[/\\]+$/ означает "найти один или несколько слэшей на конце строки"
+        downloadFolder = downloadFolder.trim().replace(/[/\\]+$/, '');
+
+        // Формируем итоговый путь
+        playlistName = `${downloadFolder}/${playlistName}`;
 
         // Проверяем, содержит ли downloadFolder переменные
         const hasVariables = /%[^%]+%/.test(downloadFolder);
