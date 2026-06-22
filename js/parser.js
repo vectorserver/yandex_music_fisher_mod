@@ -115,7 +115,6 @@
             let btn = document.getElementById('appYa-floating-download-btn');
 
             if (!btn) {
-                // Внедряем CSS-анимации подпрыгивания и мигания в документ
                 if (!document.getElementById('appYa-btn-animations')) {
                     const style = document.createElement('style');
                     style.id = 'appYa-btn-animations';
@@ -126,14 +125,14 @@
                         box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2);
                     }
                     5% {
-                        transform: scale(1.1) translateY(-8px); /* Подпрыгивание вверх */
-                        box-shadow: 0 12px 24px rgba(34, 197, 94, 0.5), inset 0 2px 4px rgba(255,255,255,0.4); /* Яркое мигание */
+                        transform: scale(1.1) translateY(-8px);
+                        box-shadow: 0 12px 24px rgba(34, 197, 94, 0.5), inset 0 2px 4px rgba(255,255,255,0.4);
                     }
                     10% {
-                        transform: scale(0.95) translateY(2px); /* Приземление с легким сжатием */
+                        transform: scale(0.95) translateY(2px);
                     }
                     12% {
-                        transform: scale(1.05) translateY(-2px); /* Микро-отскок */
+                        transform: scale(1.05) translateY(-2px);
                     }
                     15% {
                         transform: scale(1) translateY(0);
@@ -146,14 +145,15 @@
                 btn = document.createElement('div');
                 btn.id = 'appYa-floating-download-btn';
 
-                const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords')) || { bottom: '95px', right: '25px' };
+                // Загружаем сохраненные ПРОЦЕНТНЫЕ координаты
+                const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords_pct')) || { bottom: '95px', right: '25px' };
 
                 Object.assign(btn.style, {
                     position: 'fixed',
                     bottom: savedCoords.bottom,
                     right: savedCoords.right,
-                    top: savedCoords.top || 'auto',
-                    left: savedCoords.left || 'auto',
+                    top: 'auto', // Всегда позиционируем снизу-справа для адаптивности
+                    left: 'auto',
                     width: '50px',
                     height: '50px',
                     borderRadius: '50%',
@@ -166,41 +166,18 @@
                     justifyContent: 'center',
                     userSelect: 'none',
                     touchAction: 'none',
-                    // Подключаем бесконечный цикл анимации: длится 5 секунд, из них движение занимает ~1 секунду, остальное время кнопка "отдыхает"
                     animation: 'appYaBounceAndPulse 5s infinite ease-in-out',
                     transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, box-shadow 0.2s ease',
                 });
 
-                // Эффекты при наведении (временно перебивают дефолтную анимацию благодаря стилям)
-                btn.onmouseenter = () => {
-                    if (!btn.dataset.dragging) {
-                        btn.style.animationPlayState = 'paused'; // Ставим на паузу подпрыгивание при ховере
-                        btn.style.transform = 'scale(1.12) translateY(-2px)';
-                        btn.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)';
-                    }
-                };
-                btn.onmouseleave = () => {
-                    if (!btn.dataset.dragging) {
-                        btn.style.animationPlayState = 'running'; // Возобновляем подпрыгивание
-                        btn.style.transform = 'scale(1) translateY(0)';
-                        btn.style.boxShadow = '0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)';
-                    }
-                };
-                btn.onmousedown = () => {
-                    if (!btn.dataset.dragging) {
-                        btn.style.animation = 'none'; // Полностью отключаем анимацию при клике/драге
-                        btn.style.transform = 'scale(0.95)';
-                    }
-                };
-                btn.onmouseup = () => {
-                    if (!btn.dataset.dragging) {
-                        btn.style.transform = 'scale(1.12) translateY(-2px)';
-                    }
-                };
+                btn.onmouseenter = () => { if (!btn.dataset.dragging) { btn.style.animationPlayState = 'paused'; btn.style.transform = 'scale(1.12) translateY(-2px)'; } };
+                btn.onmouseleave = () => { if (!btn.dataset.dragging) { btn.style.animationPlayState = 'running'; btn.style.transform = 'scale(1) translateY(0)'; } };
+                btn.onmousedown = () => { if (!btn.dataset.dragging) { btn.style.animation = 'none'; btn.style.transform = 'scale(0.95)'; } };
+                btn.onmouseup = () => { if (!btn.dataset.dragging) { btn.style.transform = 'scale(1.12) translateY(-2px)'; } };
 
-                // ЛОГИКА DRAG & DROP
+                // ЛОГИКА АДАПТИВНОГО DRAG & DROP
                 let isDragging = false;
-                let startX, startY, startLeft, startTop;
+                let startX, startY, startRightPx, startBottomPx;
 
                 btn.addEventListener('mousedown', function (e) {
                     if (e.button !== 0) return;
@@ -208,19 +185,16 @@
                     isDragging = true;
                     btn.dataset.dragging = "true";
                     btn.style.cursor = 'grabbing';
-                    btn.style.animation = 'none'; // Отключаем подпрыгивание во время переноса
+                    btn.style.animation = 'none';
                     btn.style.transition = 'none';
 
+                    // Вычисляем текущие отступы в пикселях от правого и нижнего края экрана
                     const rect = btn.getBoundingClientRect();
-                    startLeft = rect.left;
-                    startTop = rect.top;
+                    startRightPx = window.innerWidth - rect.right;
+                    startBottomPx = window.innerHeight - rect.bottom;
+
                     startX = e.clientX;
                     startY = e.clientY;
-
-                    btn.style.top = startTop + 'px';
-                    btn.style.left = startLeft + 'px';
-                    btn.style.bottom = 'auto';
-                    btn.style.right = 'auto';
 
                     document.addEventListener('mousemove', onMouseMove);
                     document.addEventListener('mouseup', onMouseUp);
@@ -228,20 +202,23 @@
 
                 function onMouseMove(e) {
                     if (!isDragging) return;
-                    const deltaX = e.clientX - startX;
-                    const deltaY = e.clientY - startY;
 
-                    let newLeft = startLeft + deltaX;
-                    let newTop = startTop + deltaY;
+                    // Считаем смещение (при движении влево/вверх дельта для right/bottom увеличивается)
+                    const deltaX = startX - e.clientX;
+                    const deltaY = startY - e.clientY;
 
-                    const maxLeft = window.innerWidth - btn.offsetWidth;
-                    const maxTop = window.innerHeight - btn.offsetHeight;
+                    let newRight = startRightPx + deltaX;
+                    let newBottom = startBottomPx + deltaY;
 
-                    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-                    newTop = Math.max(0, Math.min(newTop, maxTop));
+                    // Ограничиваем пиксельные рамки экрана
+                    const maxRight = window.innerWidth - btn.offsetWidth;
+                    const maxBottom = window.innerHeight - btn.offsetHeight;
 
-                    btn.style.left = newLeft + 'px';
-                    btn.style.top = newTop + 'px';
+                    newRight = Math.max(0, Math.min(newRight, maxRight));
+                    newBottom = Math.max(0, Math.min(newBottom, maxBottom));
+
+                    btn.style.right = newRight + 'px';
+                    btn.style.bottom = newBottom + 'px';
                 }
 
                 function onMouseUp() {
@@ -252,16 +229,23 @@
 
                     btn.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, box-shadow 0.2s ease';
                     btn.style.transform = 'scale(1)';
-                    // Возвращаем анимацию подпрыгивания после завершения драга
                     btn.style.animation = 'appYaBounceAndPulse 5s infinite ease-in-out';
 
-                    const coords = {
-                        top: btn.style.top,
-                        left: btn.style.left,
-                        bottom: 'auto',
-                        right: 'auto'
+                    // ПЕРЕВЕРТЫШ В ПРОЦЕНТЫ: берем текущие пиксели и делим на размер экрана
+                    const rect = btn.getBoundingClientRect();
+                    const rightPct = ((window.innerWidth - rect.right) / window.innerWidth) * 100;
+                    const bottomPct = ((window.innerHeight - rect.bottom) / window.innerHeight) * 100;
+
+                    // Задаем стили в процентах
+                    btn.style.right = rightPct + '%';
+                    btn.style.bottom = bottomPct + '%';
+
+                    // Сохраняем проценты в localStorage
+                    const coordsPct = {
+                        right: rightPct + '%',
+                        bottom: bottomPct + '%'
                     };
-                    localStorage.setItem('appYa_btn_coords', JSON.stringify(coords));
+                    localStorage.setItem('appYa_btn_coords_pct', JSON.stringify(coordsPct));
 
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
@@ -270,12 +254,13 @@
                 document.body.appendChild(btn);
             }
 
-            const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords'));
+            // Восстанавливаем процентные координаты при перерендере
+            const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords_pct'));
             if (savedCoords) {
-                btn.style.top = savedCoords.top;
-                btn.style.left = savedCoords.left;
-                btn.style.bottom = savedCoords.bottom;
                 btn.style.right = savedCoords.right;
+                btn.style.bottom = savedCoords.bottom;
+                btn.style.top = 'auto';
+                btn.style.left = 'auto';
             }
 
             btn.style.backgroundColor = '#22c55e';
@@ -292,7 +277,7 @@
                 if (btn.style.cursor === 'grabbing') return;
 
                 event.stopPropagation();
-                btn.style.animation = 'none'; // Отключаем подпрыгивание во время загрузки
+                btn.style.animation = 'none';
                 btn.style.backgroundColor = '#f59e0b';
                 btn.style.pointerEvents = 'none';
                 btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 11px; text-align: center; line-height: 1;">Ждемс..</span>`;
@@ -317,7 +302,6 @@
                         setTimeout(function () {
                             btn.style.backgroundColor = '#22c55e';
                             btn.style.pointerEvents = 'auto';
-                            // Возвращаем анимацию после успешного скачивания
                             btn.style.animation = 'appYaBounceAndPulse 5s infinite ease-in-out';
                             btn.innerHTML = `
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
