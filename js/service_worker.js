@@ -51,7 +51,7 @@ const downloadManager = {
 
         // Ждём результат get
         const settings = await chrome.storage.local.get('app_setting');
-        
+
         let downloadFolder = settings?.app_setting?.downloadFolder || 'music';
         downloadFolder = downloadFolder.trim().replace(/[/\\]+$/, '');
 

@@ -112,42 +112,174 @@
 
 
         renderFloatingDownloadButton: function (trackId) {
-
             let btn = document.getElementById('appYa-floating-download-btn');
 
             if (!btn) {
+                // Внедряем CSS-анимации подпрыгивания и мигания в документ
+                if (!document.getElementById('appYa-btn-animations')) {
+                    const style = document.createElement('style');
+                    style.id = 'appYa-btn-animations';
+                    style.innerHTML = `
+                @keyframes appYaBounceAndPulse {
+                    0%, 100%, 20% {
+                        transform: scale(1) translateY(0);
+                        box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2);
+                    }
+                    5% {
+                        transform: scale(1.1) translateY(-8px); /* Подпрыгивание вверх */
+                        box-shadow: 0 12px 24px rgba(34, 197, 94, 0.5), inset 0 2px 4px rgba(255,255,255,0.4); /* Яркое мигание */
+                    }
+                    10% {
+                        transform: scale(0.95) translateY(2px); /* Приземление с легким сжатием */
+                    }
+                    12% {
+                        transform: scale(1.05) translateY(-2px); /* Микро-отскок */
+                    }
+                    15% {
+                        transform: scale(1) translateY(0);
+                    }
+                }
+            `;
+                    document.head.appendChild(style);
+                }
 
                 btn = document.createElement('div');
                 btn.id = 'appYa-floating-download-btn';
 
+                const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords')) || { bottom: '95px', right: '25px' };
 
                 Object.assign(btn.style, {
                     position: 'fixed',
-                    bottom: '95px',
-                    right: '25px',
+                    bottom: savedCoords.bottom,
+                    right: savedCoords.right,
+                    top: savedCoords.top || 'auto',
+                    left: savedCoords.left || 'auto',
                     width: '50px',
                     height: '50px',
                     borderRadius: '50%',
                     backgroundColor: '#22c55e',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)',
+                    cursor: 'grab',
                     zIndex: '999999',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'transform 0.2s ease, background-color 0.2s ease',
+                    userSelect: 'none',
+                    touchAction: 'none',
+                    // Подключаем бесконечный цикл анимации: длится 5 секунд, из них движение занимает ~1 секунду, остальное время кнопка "отдыхает"
+                    animation: 'appYaBounceAndPulse 5s infinite ease-in-out',
+                    transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, box-shadow 0.2s ease',
                 });
 
+                // Эффекты при наведении (временно перебивают дефолтную анимацию благодаря стилям)
+                btn.onmouseenter = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.animationPlayState = 'paused'; // Ставим на паузу подпрыгивание при ховере
+                        btn.style.transform = 'scale(1.12) translateY(-2px)';
+                        btn.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)';
+                    }
+                };
+                btn.onmouseleave = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.animationPlayState = 'running'; // Возобновляем подпрыгивание
+                        btn.style.transform = 'scale(1) translateY(0)';
+                        btn.style.boxShadow = '0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)';
+                    }
+                };
+                btn.onmousedown = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.animation = 'none'; // Полностью отключаем анимацию при клике/драге
+                        btn.style.transform = 'scale(0.95)';
+                    }
+                };
+                btn.onmouseup = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.transform = 'scale(1.12) translateY(-2px)';
+                    }
+                };
 
-                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+                // ЛОГИКА DRAG & DROP
+                let isDragging = false;
+                let startX, startY, startLeft, startTop;
 
-                // Добавляем на страницу
+                btn.addEventListener('mousedown', function (e) {
+                    if (e.button !== 0) return;
+
+                    isDragging = true;
+                    btn.dataset.dragging = "true";
+                    btn.style.cursor = 'grabbing';
+                    btn.style.animation = 'none'; // Отключаем подпрыгивание во время переноса
+                    btn.style.transition = 'none';
+
+                    const rect = btn.getBoundingClientRect();
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    startX = e.clientX;
+                    startY = e.clientY;
+
+                    btn.style.top = startTop + 'px';
+                    btn.style.left = startLeft + 'px';
+                    btn.style.bottom = 'auto';
+                    btn.style.right = 'auto';
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+
+                    let newLeft = startLeft + deltaX;
+                    let newTop = startTop + deltaY;
+
+                    const maxLeft = window.innerWidth - btn.offsetWidth;
+                    const maxTop = window.innerHeight - btn.offsetHeight;
+
+                    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+                    newTop = Math.max(0, Math.min(newTop, maxTop));
+
+                    btn.style.left = newLeft + 'px';
+                    btn.style.top = newTop + 'px';
+                }
+
+                function onMouseUp() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    delete btn.dataset.dragging;
+                    btn.style.cursor = 'grab';
+
+                    btn.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, box-shadow 0.2s ease';
+                    btn.style.transform = 'scale(1)';
+                    // Возвращаем анимацию подпрыгивания после завершения драга
+                    btn.style.animation = 'appYaBounceAndPulse 5s infinite ease-in-out';
+
+                    const coords = {
+                        top: btn.style.top,
+                        left: btn.style.left,
+                        bottom: 'auto',
+                        right: 'auto'
+                    };
+                    localStorage.setItem('appYa_btn_coords', JSON.stringify(coords));
+
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+
                 document.body.appendChild(btn);
             }
 
+            const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords'));
+            if (savedCoords) {
+                btn.style.top = savedCoords.top;
+                btn.style.left = savedCoords.left;
+                btn.style.bottom = savedCoords.bottom;
+                btn.style.right = savedCoords.right;
+            }
+
             btn.style.backgroundColor = '#22c55e';
-            btn.style.pointerEvents = 'auto'; // возвращаем кликабельность
+            btn.style.pointerEvents = 'auto';
             btn.innerHTML = `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
@@ -157,21 +289,21 @@
     `;
 
             btn.onclick = function (event) {
-                event.stopPropagation();
-                btn.style.backgroundColor = '#f59e0b'; // Оранжевый (Собираю клубнику...)
-                btn.style.pointerEvents = 'none'; // Блокируем повторные клики
-                btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 11px; text-align: center; line-height: 1;">Клубника</span>`;
+                if (btn.style.cursor === 'grabbing') return;
 
-                // Вызываем ваш метод получения инфы о треке
+                event.stopPropagation();
+                btn.style.animation = 'none'; // Отключаем подпрыгивание во время загрузки
+                btn.style.backgroundColor = '#f59e0b';
+                btn.style.pointerEvents = 'none';
+                btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 11px; text-align: center; line-height: 1;">Ждемс..</span>`;
+
                 appYa.fetchFileInfoOne(trackId).then(result => {
                     let downloadData = JSON.parse(result);
                     let artist = downloadData.trackinfo.artists.map(art => art.name).join(", ");
                     let filename = `${artist} - ${downloadData.trackinfo.title}.mp3`;
 
-                    // Меняем статус кнопки на "Загрузка" (Синий цвет)
                     btn.style.backgroundColor = '#3b82f6';
                     btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 11px;">MР3...</span>`;
-
 
                     const downloadLink = document.createElement('a');
                     downloadLink.href = downloadData.download;
@@ -183,9 +315,10 @@
 
                     if (document.body.removeChild(downloadLink)) {
                         setTimeout(function () {
-
                             btn.style.backgroundColor = '#22c55e';
                             btn.style.pointerEvents = 'auto';
+                            // Возвращаем анимацию после успешного скачивания
+                            btn.style.animation = 'appYaBounceAndPulse 5s infinite ease-in-out';
                             btn.innerHTML = `
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
@@ -196,16 +329,14 @@
                         }, 1000);
                     }
                 }).catch(error => {
-
                     btn.style.backgroundColor = '#ef4444';
                     btn.style.pointerEvents = 'auto';
                     btn.innerHTML = `<span style="color: white; font-weight: bold; font-size: 20px;">!</span>`;
                     console.error('Ошибка скачивания в красивой кнопке:', error);
                 });
             };
-        },
-
-
+        }
+        ,
         processPlayButtons: function (playButtonsContent) {
 
             const playButtons = playButtonsContent.querySelectorAll('div[class*="Track_root__"],div[class*="TrackCard_root__"]');
@@ -223,7 +354,7 @@
                         if (!meta.querySelector('button.added')) {
 
                             const downloadButton = document.createElement('button');
-                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 40%;top: 15px;z-index:9999;';
+                            let style = 'background-color: #fc3;color: black;border-radius: 4px;display: flex;cursor: pointer;border: none;padding: 4px 10px;position: absolute;left: 40%;top: 35px;z-index:9999;';
                             downloadButton.textContent = 'Скачать';
                             downloadButton.classList.add('added');
                             downloadButton.setAttribute('style', style);
@@ -358,18 +489,18 @@
                 const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality') ?? '400';
                 let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
 
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq);
-                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq);
+                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) +"/?byVectorserver=1";
+                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq) +"/?byVectorserver=1";
 
                 const coverResponse = await fetch(`https://${coverUrl}`);
-                const artistcoverResponse = await fetch(`https://${artistUrl}`);
+                //const artistcoverResponse = await fetch(`https://${artistUrl}`);
 
                 if (!coverResponse.ok) {
-                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText}`);
+                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText} - ${coverUrl}`);
                 }
 
                 const coverData = new Uint8Array(await coverResponse.arrayBuffer());
-                const artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
+                //const artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
 
                 const writer = new ID3Writer(mp3Data);
                 const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
@@ -383,11 +514,11 @@
                     .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`)
                     .setFrame('APIC', {
                         type: 3, data: coverData, description: 'Cover (front)'
-                    })
-                    .setFrame('APIC', {
+                    }).addTag();
+                    /*.setFrame('APIC', {
                         type: 17, data: artistcoverResponseData, description: 'Band Logo'
-                    })
-                    .addTag();
+                    })*/
+
 
                 const updatedMp3 = writer.arrayBuffer;
                 const blob = new Blob([updatedMp3], {type: 'audio/mpeg'});
@@ -491,6 +622,8 @@
                     return await originalFetch(url, options);
                 }
 
+
+
                 let response = await originalFetch(url, options);
                 let clonedResponse = response.clone();
 
@@ -501,6 +634,7 @@
                 const contentType = clonedResponse.headers.get("content-type");
                 if (contentType?.includes("application/json")) {
                     try {
+
                         const folder = this.extractFolderFromUrl(clonedResponse.url);
                         const data = await clonedResponse.json();
                         if (data && Object.keys(data).length > 0) {
