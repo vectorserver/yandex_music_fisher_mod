@@ -20,14 +20,14 @@
                 localStorage.clear();
             }
 
-            let appYa_token = localStorage.getItem('appYa_token');
-            if (!appYa_token) {
+            let aYa_token = localStorage.getItem('aYa_token');
+            if (!aYa_token) {
                 appYa.reToken();
             } else {
-                localStorage.setItem('appYa_hosting', window.location.origin);
+                localStorage.setItem('aYa_hosting', window.location.origin);
 
-                appYa_token = JSON.parse(appYa_token);
-                appYa.tokenData = appYa_token;
+                aYa_token = JSON.parse(aYa_token);
+                appYa.tokenData = aYa_token;
 
                 let previousHref = window.location.href;
 
@@ -63,7 +63,7 @@
                 audioInstance.addEventListener('loadstart', () => {
                     const currentSrc = audioInstance.src || audioInstance.currentSrc;
                     if (currentSrc && (currentSrc.includes('strm.yandex.net') || currentSrc.includes('container=mp4'))) {
-                        localStorage.setItem('appYa_last_stream_url', currentSrc);
+                        localStorage.setItem('aYa_last_stream_url', currentSrc);
                     }
                 });
 
@@ -89,8 +89,8 @@
 
                                     appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
                                         if (cureitTrack){
-                                            localStorage.setItem('appYa_cureitTrack', cureitTrack);
-                                            console.log('appYa_cureitTrack',trackId)
+                                            localStorage.setItem('aYa_cureitTrack', cureitTrack);
+                                            console.log('aYa_cureitTrack',trackId)
                                         }
 
                                     }).catch(() => {
@@ -146,7 +146,7 @@
                 btn.id = 'appYa-floating-download-btn';
 
                 // Загружаем сохраненные ПРОЦЕНТНЫЕ координаты
-                const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords_pct')) || { bottom: '95px', right: '25px' };
+                const savedCoords = JSON.parse(localStorage.getItem('aYa_btn_coords_pct')) || { bottom: '95px', right: '25px' };
 
                 Object.assign(btn.style, {
                     position: 'fixed',
@@ -245,7 +245,7 @@
                         right: rightPct + '%',
                         bottom: bottomPct + '%'
                     };
-                    localStorage.setItem('appYa_btn_coords_pct', JSON.stringify(coordsPct));
+                    localStorage.setItem('aYa_btn_coords_pct', JSON.stringify(coordsPct));
 
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
@@ -255,7 +255,7 @@
             }
 
             // Восстанавливаем процентные координаты при перерендере
-            const savedCoords = JSON.parse(localStorage.getItem('appYa_btn_coords_pct'));
+            const savedCoords = JSON.parse(localStorage.getItem('aYa_btn_coords_pct'));
             if (savedCoords) {
                 btn.style.right = savedCoords.right;
                 btn.style.bottom = savedCoords.bottom;
@@ -396,12 +396,12 @@
                     params[key] = value;
                 });
 
-                localStorage.setItem('appYa_token', JSON.stringify(params));
+                localStorage.setItem('aYa_token', JSON.stringify(params));
                 window.location.href = appYa.location_origin;
 
             } else {
-                let appYa_authorizationUrl = (`${appYa.oauthUrl}authorize?response_type=token&client_id=${appYa.client_id}&redirect_uri=${appYa.redirect_uri}`);
-                localStorage.setItem('appYa_authorizationUrl', appYa_authorizationUrl)
+                let aYa_authorizationUrl = (`${appYa.oauthUrl}authorize?response_type=token&client_id=${appYa.client_id}&redirect_uri=${appYa.redirect_uri}`);
+                localStorage.setItem('aYa_authorizationUrl', aYa_authorizationUrl)
             }
         },
 
@@ -425,16 +425,16 @@
             const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
             const timestamp = Math.floor(Date.now() / 1000);
 
-            const appYa_setting_audioQuality = localStorage.getItem('appYa_setting_audioQuality') ?? 'lossless';
+            const aYa_setting_audioQuality = localStorage.getItem('aYa_setting_audioQuality') ?? 'lossless';
 
-            const dataToSign = `${timestamp}${trackId}${appYa_setting_audioQuality}flacraw`;
+            const dataToSign = `${timestamp}${trackId}${aYa_setting_audioQuality}flacraw`;
 
             const sign = await appYa.generateSign(secretKey, dataToSign);
 
             const params = new URLSearchParams({
                 ts: timestamp,
                 trackId: trackId,
-                quality: appYa_setting_audioQuality,
+                quality: aYa_setting_audioQuality,
                 codecs: 'flac',
                 transports: 'raw',
                 sign: sign
@@ -470,8 +470,8 @@
                 }
                 const mp3Data = new Uint8Array(await response.arrayBuffer());
 
-                const appYa_setting_coverQuality = localStorage.getItem('appYa_setting_coverQuality') ?? '400';
-                let qq = `${appYa_setting_coverQuality}x${appYa_setting_coverQuality}`
+                const aYa_setting_coverQuality = localStorage.getItem('aYa_setting_coverQuality') ?? '400';
+                let qq = `${aYa_setting_coverQuality}x${aYa_setting_coverQuality}`
 
                 const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) +"/?byVectorserver=1";
                 const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq) +"/?byVectorserver=1";
@@ -516,7 +516,7 @@
             }
         },
 
-        parsePage: async function () {
+        parsePage_O: async function () {
             try {
                 let url = window.location.href;
                 if (url.includes('/artist') && !url.endsWith('/tracks')) {
@@ -552,12 +552,15 @@
 
                 const allPatches = mergedObject.flat();
                 const finalTree = {};
+                console.log('finalTree',allPatches)
 
                 allPatches.forEach(patch => {
                     if (!patch || !patch.path) return;
 
                     const keys = patch.path.split('/').filter(Boolean);
                     let current = finalTree;
+
+
 
                     for (let i = 0; i < keys.length - 1; i++) {
                         const key = keys[i];
@@ -573,9 +576,104 @@
                     }
                 });
 
-                localStorage.removeItem('appYa_page');
+
+                localStorage.removeItem('aYa_page');
                 const currentDataString = JSON.stringify(finalTree);
-                localStorage.setItem('appYa_page', currentDataString);
+                localStorage.setItem('aYa_page', currentDataString);
+
+            } catch (error) {
+                // Silent catch
+            }
+        },
+        parsePage: async function () {
+            try {
+                let url = window.location.href;
+                if (url.includes('/artist') && !url.endsWith('/tracks')) {
+                    url = `${url}/tracks`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) return;
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Яндекс может размещать скрипты не только в body, берем все script на странице
+                const scriptElements = doc.querySelectorAll("script");
+
+                // Универсальное регулярное выражение, которое находит любой вызов .push(...)
+                const pushRegex = /window\.__(?:PAGE_)?STATE_PATCHES__(?:\[['"][^'"]+['"]\])?(?:\s*=\s*.*?|\s*\|\|\s*.*?)*\.push\(([\s\S]*?)\);/g;
+
+                const mergedObject = [];
+
+                scriptElements.forEach((script) => {
+                    const content = script.textContent;
+                    if (!content) return;
+
+                    // Сбрасываем индекс регулярного выражения перед каждым поиском
+                    pushRegex.lastIndex = 0;
+                    const matches = [...content.matchAll(pushRegex)];
+
+                    for (const match of matches) {
+                        // match[1] содержит то, что попало в круглые скобки ([\s\S]*?)
+                        const pushData = match[1]?.trim();
+                        if (!pushData) continue;
+
+                        try {
+                            const parsedData = new Function(`return ${pushData};`)();
+                            mergedObject.push(parsedData);
+                        } catch (e) {
+                            // Silent catch
+                        }
+                    }
+                });
+
+
+                // Разворачиваем вложенные массивы патчей в один плоский массив
+                const allPatches = mergedObject.flat(Infinity);
+                const finalTree = {};
+
+
+                allPatches.forEach(patch => {
+                    // Защита: проверяем, что это объект патча Яндекса (операция replace или add и наличие path)
+                    if (!patch || typeof patch !== 'object' || !patch.path) return;
+
+
+
+                    const keys = patch.path.split('/').filter(Boolean);
+                    let current = finalTree;
+
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        const key = keys[i];
+                        if (!current[key] || typeof current[key] !== 'object') {
+                            current[key] = {};
+                        }
+                        current = current[key];
+                    }
+
+                    const lastKey = keys[keys.length - 1];
+                    if (lastKey !== undefined) {
+                        // Если операция replace или целевого свойства еще нет — записываем значение напрямую
+                        if (patch.op === 'replace' || !current[lastKey]) {
+                            current[lastKey] = patch.value;
+                        } else if (patch.op === 'add') {
+                            // Если операция add и там уже массив — пушим, если объект/строка — превращаем в массив
+                            if (Array.isArray(current[lastKey])) {
+                                current[lastKey].push(patch.value);
+                            } else {
+                                current[lastKey] = [current[lastKey], patch.value];
+                            }
+                        }
+                    }
+                });
+
+                localStorage.removeItem('aYa_page');
+
+
+                const currentDataString = JSON.stringify(finalTree);
+                console.log('allPatches', finalTree);
+                localStorage.setItem('aYa_page', currentDataString);
 
             } catch (error) {
                 // Silent catch
@@ -622,7 +720,7 @@
                         const folder = this.extractFolderFromUrl(clonedResponse.url);
                         const data = await clonedResponse.json();
                         if (data && Object.keys(data).length > 0) {
-                            localStorage.setItem(`appYa_${folder}`, JSON.stringify(data));
+                            localStorage.setItem(`aYa_${folder}`, JSON.stringify(data));
                         }
                     } catch (e) {
                     }

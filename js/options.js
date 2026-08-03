@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     //Восстановление сохраненных настроек
     const data = await chrome.storage.local.get('app_setting');
     if (data.app_setting) {
-        folderInput.value = data.app_setting.downloadFolder || 'music/%genre%';
+        folderInput.value = data.app_setting.downloadFolder || 'music/';
         coverSelect.value = data.app_setting.coverQuality || 600;
         audioSelect.value = data.app_setting.audioQuality || 'lossless';
         downlodadCount.value = data.app_setting.downlodadCount || 4;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         e.preventDefault();
 
         const settings_submit = {
-            downloadFolder: folderInput.value || 'music/%genre%',
+            downloadFolder: folderInput.value || 'music/',
             coverQuality: parseInt(coverSelect.value || '600'),
             audioQuality: audioSelect.value || 'nq',
             downlodadCount: parseInt(downlodadCount.value || 4),

@@ -49,10 +49,11 @@ const downloadManager = {
     async downloadTracks(message, globalCount) {
         let {tabId, playlistName, trackIds} = message;
 
+
         // Ждём результат get
         const settings = await chrome.storage.local.get('app_setting');
 
-        let downloadFolder = settings?.app_setting?.downloadFolder || 'music';
+        let downloadFolder = settings?.app_setting?.downloadFolder || 'music/';
         downloadFolder = downloadFolder.trim().replace(/[/\\]+$/, '');
 
 
@@ -97,7 +98,6 @@ const downloadManager = {
 
                                 if (inputData !== null && inputData.download) {
 
-                                    console.log('inputData',inputData)
 
                                     // Если есть переменные в downloadFolder, обрабатываем их
                                     if (hasVariables) {
@@ -156,12 +156,15 @@ const downloadManager = {
             return text
                 // 1. Удаляем скрытые символы и управляющие коды (0-31, 127-159)
                 .replace(/[\x00-\x1F\x7F-\x9F]/g, "")
-                // 2. Заменяем запрещенные в Windows/Unix спецсимволы на пробелы: \ / : * ? " < > |
-                .replace(/[\\/:*?"<>|]/g, " ")
+                // 2. Заменяем запрещенные спецсимволы на пробелы (БЕЗ слэша /): \ : * ? " < > |
+                .replace(/[\\:*?"<>|]/g, " ")
                 // 3. Заменяем множественные пробелы на один одинарный
                 .replace(/\s+/g, " ")
-                // 4. Удаляем пробелы на концах строки
-                .trim();
+                // 4. Заменяем множественные слэши (типа ///) на один корректный /
+                .replace(/\/+/g, "/")
+                // 5. Удаляем пробелы на концах строки и лишние слэши по краям
+                .trim()
+                .replace(/^\/+|\/+$/g, ""); // Убирает / в самом начале и в самом конце
         }
     },
 
@@ -171,9 +174,14 @@ const downloadManager = {
         //console.log('[service_worker.js] playlistName',playlistName)
         //console.log('[service_worker.js] settings',settings)
 
+
         const escapeFileName = (fileName) => fileName.replace(/[\\/:*?"<>|]/g, '_');
         let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
         let title = inputData.trackinfo.title;
+        if (title.length >= 90) {
+            const trackIdx = inputData.trackinfo?.albums?.[0]?.trackPosition?.index;
+            title = `${trackIdx}_${inputData.trackinfo.id}`;
+        }
 
         let trackPrefix = '';
         if (settings?.app_setting?.numberingTracks === true) {
@@ -185,8 +193,7 @@ const downloadManager = {
         }
         let fileName = `${playlistName}/${trackPrefix}${escapeFileName(artists)} - ${escapeFileName(title)}.mp3`;
 
-        console.log('[service_worker.js] fileName',fileName);
-
+        console.log('[service_worker.js] fileName', fileName);
 
         //Тут нужно еще проверка о том что файл существует settings?.app_setting.checkexists если есть то не качаем
         chrome.downloads.download({
@@ -242,7 +249,7 @@ const worker = {
                     },
                     world: "MAIN"
                 }).then(() => {
-                    appService.saveToStorage('appYa_tabID', sender.tab.id);
+                    appService.saveToStorage('aYa_tabID', sender.tab.id);
                 }).catch(console.error);
             }).catch(console.error);
 
@@ -251,12 +258,12 @@ const worker = {
 
         if (message.action === "send_localStorage") {
             sendResponse({success: true, data: message.data});
-            if (message.data && !message.data.appYa_token) {
-                appService.saveToStorage('appYa_db', {appYa_token: false});
+            if (message.data && !message.data.aYa_token) {
+                appService.saveToStorage('aYa_db', {aYa_token: false});
             }
-            appService.saveToStorage('appYa_db', message.data).then(() => {
+            appService.saveToStorage('aYa_db', message.data).then(() => {
 
-                //console.log("Данные localStorage успешно сохранены:", { appYa_db: message.data });
+                //console.log("Данные localStorage успешно сохранены:", { aYa_db: message.data });
             }).catch(console.error);
             return true;
         }
@@ -271,7 +278,7 @@ const worker = {
         // Обработчик сообщения для загрузки через SHIFT+D или двойной клик
         if (message.action === "download_SFIFTD") {
             // Парсим информацию о файле из localStorage данных сообщения
-            const trDinfo = JSON.parse(message.data["appYa_get-file-info"]);
+            const trDinfo = JSON.parse(message.data["aYa_get-file-info"]);
 
             // Проверяем, есть ли ID трека для загрузки
             if (trDinfo.downloadInfo.trackId) {

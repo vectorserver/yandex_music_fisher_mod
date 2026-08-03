@@ -16,8 +16,8 @@ chrome.storage.local.get('app_setting', (result) => {
     if (result.app_setting) {
         // Копируем каждую настройку в localStorage
         for (const [key, value] of Object.entries(result.app_setting)) {
-            console.log('appYa_setting_' + key, value)
-            localStorage.setItem('appYa_setting_' + key, value);
+            console.log('aYa_setting_' + key, value)
+            localStorage.setItem('aYa_setting_' + key, value);
         }
 
     }

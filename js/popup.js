@@ -1,9 +1,11 @@
 console.log('js/popup.js');
 
 const appVersion = document.getElementById('appv');
+const appVersionLogin = document.getElementById('appvLogin');
 const manifestData = chrome.runtime.getManifest();
 if (appVersion && manifestData.version) {
     appVersion.textContent = manifestData.version;
+    appVersionLogin.textContent = manifestData.version;
 }
 const section = document.querySelector('section');
 const col_one = document.getElementById('col1');
@@ -48,7 +50,7 @@ const storageService = {
 
 // Обновление пользовательского интерфейса
 const uiUpdater = {
-    updateUI(data, appYa_tabID, app) {
+    updateUI(data, aYa_tabID, app) {
         const parsedData = parser.parseStorage(data);
         const cQ = app?.app_setting?.coverQuality ?? 300;
         var cQR = `${cQ}x${cQ}`;
@@ -58,16 +60,16 @@ const uiUpdater = {
         const authorizationBtn = authorizationPanel.querySelector('#authorize');
 
 
-        if (parsedData.appYa_token) {
-            this.updateTrackInfo(parsedData, appYa_tabID, cQR);
-            this.updatePlaylistInfo(parsedData, appYa_tabID, cQR);
-            let checktokenData = uiUpdater.getTokenExpirationDate(parsedData.appYa_token);
+        if (parsedData.aYa_token) {
+            this.updateTrackInfo(parsedData, aYa_tabID, cQR);
+            this.updatePlaylistInfo(parsedData, aYa_tabID, cQR);
+            let checktokenData = uiUpdater.getTokenExpirationDate(parsedData.aYa_token);
             tokenEnd.innerText = checktokenData;
             tokenEndUrl.addEventListener('click', function () {
                 //localStorage.clear()
                 const dataToInject = `localStorage.clear();window.location.reload();`;
                 chrome.scripting.executeScript({
-                    target: {tabId: appYa_tabID},
+                    target: {tabId: aYa_tabID},
                     func: (injectedData) => eval(injectedData),
                     args: [dataToInject],
                     world: "MAIN",
@@ -76,14 +78,14 @@ const uiUpdater = {
                 });
             });
             //console.log('parsedData',parsedData)
-            //console.log('appYa_page',parsedData.appYa_page)
+            //console.log('aYa_page',parsedData.aYa_page)
         } else {
             authorizationPanel.style.display = 'flex';
-            authorizationBtn.setAttribute('href', parsedData.appYa_authorizationUrl);
+            authorizationBtn.setAttribute('href', parsedData.aYa_authorizationUrl);
 
             setTimeout(() => {
                 authorizationBtn.addEventListener('click', () => {
-                    chrome.tabs.remove(appYa_tabID, (error) => {
+                    chrome.tabs.remove(aYa_tabID, (error) => {
                         if (chrome.runtime.lastError) {
                             console.error(chrome.runtime.lastError);
                         } else {
@@ -95,16 +97,16 @@ const uiUpdater = {
         }
     },
 
-    updateTrackInfo(parsedData, appYa_tabID, cQR) {
-        console.log('updateTrackInfo',parsedData, appYa_tabID, cQR)
-        if (!parsedData.appYa_cureitTrack) {
+    updateTrackInfo(parsedData, aYa_tabID, cQR) {
+        console.log('updateTrackInfo', parsedData, aYa_tabID, cQR)
+        if (!parsedData.aYa_cureitTrack) {
             document.querySelector('body .container-fluid').innerHTML =
                 'Включите трек, Яндекс Музыки, потом вернитесь сюда)';
             return;
         }
 
         workPanel.style.display = 'flex';
-        const track = parsedData.appYa_cureitTrack.trackinfo;
+        const track = parsedData.aYa_cureitTrack.trackinfo;
         const imageURL = `https://${track.coverUri.replace(/%%/g, cQR)}`;
         const artists = track.artists.map((item) => item.name).join(', ');
         const albums = track.albums.map((item) => item.year).join(', ');
@@ -119,36 +121,115 @@ const uiUpdater = {
         document.querySelector('#trackPanel').style.backgroundColor = track.derivedColors.accent;
 
         document.getElementById('downloadButton').addEventListener('click', () => {
-            eventHandlers.downloadTracks(appYa_tabID, [track.id], 'music');
+            eventHandlers.downloadTracks(aYa_tabID, [track.id], 'music');
         });
     },
 
-    updatePlaylistInfo(parsedData, appYa_tabID, cQR) {
-        const playlist = parsedData.appYa_page.playlist;
-        const artist = parsedData.appYa_page.artist;
-        const album = parsedData.appYa_page.album;
-        const chart = parsedData.appYa_page.chart;
+    updatePlaylistInfo(parsedData, aYa_tabID, cQR) {
+        const pageThis = parsedData.aYa_page?.location?.pathname?.split('/')[1] ?? '';
+        const pageData = parsedData.aYa_page;
+        console.log('pageThis', pageThis, pageData);
+        let year = '';
+        let title = '';
+        let trackIds = [];
+        let coverUri = '';
+        let artistnames = '';
+        let totalTracks = 0;
+        let type = '';
 
-        //console.log('updatePlaylistInfo_type',parsedData.appYa_page)
+        switch (pageThis) {
+            case 'chart':
+                title = pageData.tracksSubPage.title
+                trackIds = (Array.isArray(pageData.tracksSubPage.items) ? pageData.tracksSubPage.items : Object.values(pageData.tracksSubPage.items)).map(track => track?.id);
+
+                playlistPanelTitle.innerText = `${title}`;
+
+                playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать все треки Чарта';
+                playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
+
+                playlistPanelMetaDownloadBtn.style.display = 'flex';
+                playlistPanelMetaDownloadBtn.addEventListener('click', () => {
+                    eventHandlers.downloadTracks(aYa_tabID, trackIds, `chart`);
+                });
+
+                break;
+            case 'album':
+                year = pageData.album.meta.year ? ` - ${pageData.album.meta.year }` : "";
+                title = pageData.album.meta.title.replace(':', '_') + year;
+                trackIds = (Array.isArray(pageData.album.items) ? pageData.album.items : Object.values(pageData.album.items)).map(track => track?.id);
+                coverUri = `https://${pageData.album.meta.coverUri.replace(/%%/g, cQR)}`;
+                type = 'album';
+                if (pageData.album.meta.type){
+                    type = pageData.album.meta.type;
+                }
 
 
-        if (playlist && playlist.items && playlist.meta) {
-            const title = playlist.meta.title.replace(':', '_');
+                playlistPanelTitle.innerText = `Альбом: ${title}`;
+                playlistPanelImage.src = coverUri;
 
-            const itemsArray = Object.values(playlist.items || {});
-            const trackIds = itemsArray.map(track => track.id);
+                if (pageData.album.meta.artists) {
+                    artistnames = pageData.album.meta.artists.map(name => name?.name).join(', ');
+                    playlistPanelMeta.innerText = artistnames;
+                }
 
 
-            const totalTracks = trackIds.length;
+                playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать все треки альбома';
+                playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
 
-            // Ищем или создаем контейнер для Range
-            let rangeWrapper = document.getElementById('playlistDownloadWrapper');
-            if (!rangeWrapper) {
-                rangeWrapper = document.createElement('div');
-                rangeWrapper.id = 'playlistDownloadWrapper';
-                rangeWrapper.style.marginBottom = '15px';
+                playlistPanelMetaDownloadBtn.style.display = 'flex';
+                playlistPanelMetaDownloadBtn.addEventListener('click', () => {
+                    eventHandlers.downloadTracks(aYa_tabID, trackIds, `${type}/${escapeFileName(title)}`);
+                });
 
-                rangeWrapper.innerHTML = `
+                break;
+
+            case 'artist':
+
+                title = pageData.artist.meta.artist.name;
+
+                coverUri = `https://${pageData.artist.meta.artist.coverUri.replace(/%%/g, cQR)}`;
+
+                if (pageData.artist.familiarSubpage){
+                    trackIds =  pageData.artist.familiarSubpage.vibeTracks.map(track => track?.id);
+                    title =  `Знакомое вам от - ${title}`;
+                } else {
+                    trackIds =  pageData.artist.fullTracksListSubpage.ids;
+                }
+
+                playlistPanelTitle.innerText = `Исполнитель: ${title}`;
+                playlistPanelImage.src = coverUri;
+
+                if (pageData.artist.meta.artists) {
+                    artistnames = pageData.artist.meta.artists.map(name => name?.name).join(', ');
+                    playlistPanelMeta.innerText = artistnames;
+                }
+
+                playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать треки артиста';
+                playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
+
+                playlistPanelMetaDownloadBtn.style.display = 'flex';
+                playlistPanelMetaDownloadBtn.addEventListener('click', () => {
+                    eventHandlers.downloadTracks(aYa_tabID, trackIds, `artist/${escapeFileName(title)}`);
+                });
+                break;
+                case 'playlists':
+                case 'playlist':
+
+                    title = pageData.playlist.meta.title;
+                    coverUri = `https://${pageData.playlist.meta.coverUri.replace(/%%/g, cQR)}`;
+                    trackIds = (Array.isArray(pageData.playlist.items) ? pageData.playlist.items : Object.values(pageData.playlist.items)).map(track => track?.id);
+                    totalTracks = trackIds.length;
+                    playlistPanelTitle.innerText = `${title}`;
+                    playlistPanelImage.src = coverUri;
+                    playlistPanelMeta.innerHTML = `Автор: ${pageData.playlist.meta.owner.name}<br>Кол-во: ${totalTracks}`;
+
+                    let rangeWrapper = document.getElementById('playlistDownloadWrapper');
+                    if (!rangeWrapper) {
+                        rangeWrapper = document.createElement('div');
+                        rangeWrapper.id = 'playlistDownloadWrapper';
+                        rangeWrapper.style.marginBottom = '15px';
+
+                        rangeWrapper.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.9rem;">
                 <span id="rangeLabelText" class="text-muted">Выбрано треков:</span>
                 <b id="rangeValueDisplay" class="text-primary">1 — ${totalTracks}</b>
@@ -160,156 +241,68 @@ const uiUpdater = {
                 <input type="range" class="form-range" id="rangeEnd" min="1" step="1">
             </div>
         `;
-                playlistPanelMetaDownloadBtn.parentNode.insertBefore(rangeWrapper, playlistPanelMetaDownloadBtn);
-            }
-
-            const rStart = document.getElementById('rangeStart');
-            const rEnd = document.getElementById('rangeEnd');
-            const rDisplay = document.getElementById('rangeValueDisplay');
-
-            // Настройка параметров (показываем только если треков > 1)
-            if (totalTracks > 1) {
-                rangeWrapper.style.display = 'block';
-                rStart.max = totalTracks;
-                rEnd.max = totalTracks;
-
-                // По умолчанию — ВСЕ
-                rStart.value = 1;
-                rEnd.value = totalTracks;
-
-                const updateRangeUI = () => {
-                    let s = parseInt(rStart.value);
-                    let e = parseInt(rEnd.value);
-
-                    // Валидация: начало не может быть больше конца
-                    if (s > e) {
-                        rStart.value = e;
-                        s = e;
+                        playlistPanelMetaDownloadBtn.parentNode.insertBefore(rangeWrapper, playlistPanelMetaDownloadBtn);
                     }
 
-                    rDisplay.innerText = (s === 1 && e === totalTracks)
-                        ? `Все (${totalTracks})`
-                        : `${s} — ${e} (шт: ${e - s + 1})`;
-                };
+                    const rStart = document.getElementById('rangeStart');
+                    const rEnd = document.getElementById('rangeEnd');
+                    const rDisplay = document.getElementById('rangeValueDisplay');
 
-                rStart.oninput = updateRangeUI;
-                rEnd.oninput = updateRangeUI;
-                updateRangeUI();
-            } else {
-                rangeWrapper.style.display = 'none';
-            }
+                    // Настройка параметров (показываем только если треков > 1)
+                    if (totalTracks > 1) {
+                        rangeWrapper.style.display = 'block';
+                        rStart.max = totalTracks;
+                        rEnd.max = totalTracks;
 
-            playlistPanelMetaDownloadBtn.innerText = 'Скачать выбранное';
-            playlistPanelMetaDownloadBtn.style.display = 'flex';
-            playlistPanelMetaDownloadBtn.style.width = '100%';
+                        // По умолчанию — ВСЕ
+                        rStart.value = 1;
+                        rEnd.value = totalTracks;
 
-            playlistPanelMetaDownloadBtn.onclick = () => {
-                const startIdx = parseInt(rStart.value) - 1; // в индекс массива
-                const endIdx = parseInt(rEnd.value);
+                        const updateRangeUI = () => {
+                            let s = parseInt(rStart.value);
+                            let e = parseInt(rEnd.value);
 
-                // Формируем массив согласно выбранному диапазону
-                const idsToDownload = trackIds.slice(startIdx, endIdx);
+                            // Валидация: начало не может быть больше конца
+                            if (s > e) {
+                                rStart.value = e;
+                                s = e;
+                            }
 
-                eventHandlers.downloadTracks(appYa_tabID, idsToDownload, `playlist/${title}`);
-            };
+                            rDisplay.innerText = (s === 1 && e === totalTracks)
+                                ? `Все (${totalTracks})`
+                                : `${s} — ${e} (шт: ${e - s + 1})`;
+                        };
 
-            // Обновление мета-данных
-            playlistPanelTitle.innerText = `Плейлист: ${title}`;
-            playlistPanelMeta.innerHTML = `Автор: ${playlist.meta.owner.name}<br>Кол-во: ${totalTracks}`;
-            playlistPanelImage.src = `https://${playlist.meta.coverUri.replace(/%%/g, cQR)}`;
-        }
+                        rStart.oninput = updateRangeUI;
+                        rEnd.oninput = updateRangeUI;
+                        updateRangeUI();
+                    } else {
+                        rangeWrapper.style.display = 'none';
+                    }
 
+                    playlistPanelMetaDownloadBtn.innerText = 'Скачать выбранное';
+                    playlistPanelMetaDownloadBtn.style.display = 'flex';
+                    playlistPanelMetaDownloadBtn.style.width = '100%';
 
+                    playlistPanelMetaDownloadBtn.onclick = () => {
+                        const startIdx = parseInt(rStart.value) - 1; // в индекс массива
+                        const endIdx = parseInt(rEnd.value);
 
+                        // Формируем массив согласно выбранному диапазону
+                        const idsToDownload = trackIds.slice(startIdx, endIdx);
 
-        else if (artist && artist?.fullTracksListSubpage?.ids?.length) {
-            console.log('artist', artist)
-            let title = 'Артист...';
-            let coverUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg==';
-            if (artist.meta) {
-                 title = artist.meta.artist.name.replace(':', '_');
-                 coverUri = `https://${artist.meta.artist.coverUri.replace(/%%/g, cQR)}`;
-            } else {
-
-                if(artist.commonSubPage.artistName) title = artist.commonSubPage.artistName.replace(':', '_');
-                if(artist.lastRelease.coverUri) coverUri = `https://${artist.lastRelease.coverUri.replace(/%%/g, cQR)}`;
-
-            }
-            const trackIds = artist.fullTracksListSubpage.ids;
-            playlistPanelTitle.innerText = `Артист: ${title}`;
-            playlistPanelImage.src = coverUri;
-
-            playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать все треки артиста';
-            playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
+                        eventHandlers.downloadTracks(aYa_tabID, idsToDownload, `playlist/${title}`);
+                    };
 
 
-            playlistPanelMetaDownloadBtn.style.display = 'flex';
-            playlistPanelMetaDownloadBtn.addEventListener('click', () => {
-
-                eventHandlers.downloadTracks(appYa_tabID, trackIds, `artist/${escapeFileName(title)}`);
-            });
-
-            //popularTracks
-
-            //albums
-            let tpl_albums = `<hr><div id="popularTracks">
-                                <strong>Альбомы</strong>
-                                <div class="list-group">
-                                ${artist.albums.map(al => {
-                let url = `${parsedData.appYa_hosting}/album/${al.id}`;
-                return `<a  class="album-link list-group-item list-group-item-action" data-urlTab="${url}" href="#">${al.title} - ${al.year} <span class="badge bg-danger">${al.trackCount}</span></a>`;
-            }).join('\n')}
-                                </div>
-                                </div>`
-            playlistPanelMetaotherData.innerHTML += tpl_albums;
-            document.addEventListener('click', function (event) {
-                const url = event.target.getAttribute('data-urlTab');
-                eventHandlers.changeTabUrl(appYa_tabID, url)
-            });
-
-
-        } else if (album && album?.items?.length) {
-
-            const year = album.meta?.year ? ' - ' + album.meta.year : '';
-            const title = album.meta.title.replace(':', '_') + year;
-            const trackIds = album.items.map(track => track.id);
-            const coverUri = `https://${album.meta.coverUri.replace(/%%/g, cQR)}`;
-
-            playlistPanelTitle.innerText = `Альбом: ${title}`;
-            playlistPanelImage.src = coverUri;
-
-            playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать все треки альбома';
-            playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
-
-            playlistPanelMetaDownloadBtn.style.display = 'flex';
-            playlistPanelMetaDownloadBtn.addEventListener('click', () => {
-                eventHandlers.downloadTracks(appYa_tabID, trackIds, `album/${escapeFileName(title)}`);
-            });
-
-
-        } else if (chart && chart?.tracksSubPage?.items?.length) {
-
-            const trackIds = chart.tracksSubPage.items.map(track => track.id);
-            //const coverUri = `https://${album.meta.coverUri.replace(/%%/g, cQR)}`;
-
-            //playlistPanelTitle.innerText = `Чарт`;
-            //playlistPanelImage.src = coverUri;
-
-            playlistPanelMetaDownloadBtn.querySelector('.text').innerText = 'Скачать ЧАРТ';
-            playlistPanelMetaDownloadBtn.querySelector('.counter').innerText = `${trackIds.length}`;
-
-            playlistPanelMetaDownloadBtn.style.display = 'flex';
-            playlistPanelMetaDownloadBtn.addEventListener('click', () => {
-                eventHandlers.downloadTracks(appYa_tabID, trackIds, `chart`);
-            });
-
-
-        } else {
-            col_one.classList.add('col-12');
-            col_two.classList.add('d-none');
-            section.style.width = '280px';
+                    break;
+            default:
+                col_one.classList.add('col-12');
+                col_two.classList.add('d-none');
+                section.style.width = '280px';
 
         }
+
 
     },
     getTokenExpirationDate(tokenData) {
@@ -340,14 +333,14 @@ const eventHandlers = {
     onDOMContentLoaded() {
         storageService.getStorageData((result) => {
             //console.log('ss',result)
-            if (result.appYa_db) {
+            if (result.aYa_db) {
 
 
-                uiUpdater.updateUI(result.appYa_db, result.appYa_tabID, result);
+                uiUpdater.updateUI(result.aYa_db, result.aYa_tabID, result);
 
                 storageService.monitorStorageChanges((changes) => {
-                    const {newValue, oldValue} = changes.appYa_db;
-                    if (newValue?.appYa_cureitTrack !== oldValue?.appYa_cureitTrack || newValue?.appYa_page !== oldValue?.appYa_page) {
+                    const {newValue, oldValue} = changes.aYa_db;
+                    if (newValue?.aYa_cureitTrack !== oldValue?.aYa_cureitTrack || newValue?.aYa_page !== oldValue?.aYa_page) {
                         window.location.reload();
                     }
                 });
