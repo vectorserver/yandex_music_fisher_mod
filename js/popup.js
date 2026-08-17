@@ -82,6 +82,9 @@ const uiUpdater = {
         } else {
             authorizationPanel.style.display = 'flex';
             authorizationBtn.setAttribute('href', parsedData.aYa_authorizationUrl);
+            if (!parsedData.aYa_authorizationUrl){
+                authorizationPanel.innerText='Для начала перейди на https://music.yandex.ru/';
+            }
 
             setTimeout(() => {
                 authorizationBtn.addEventListener('click', () => {
@@ -154,12 +157,12 @@ const uiUpdater = {
 
                 break;
             case 'album':
-                year = pageData.album.meta.year ? ` - ${pageData.album.meta.year }` : "";
+                year = pageData.album.meta.year ? ` - ${pageData.album.meta.year}` : "";
                 title = pageData.album.meta.title.replace(':', '_') + year;
                 trackIds = (Array.isArray(pageData.album.items) ? pageData.album.items : Object.values(pageData.album.items)).map(track => track?.id);
                 coverUri = `https://${pageData.album.meta.coverUri.replace(/%%/g, cQR)}`;
                 type = 'album';
-                if (pageData.album.meta.type){
+                if (pageData.album.meta.type) {
                     type = pageData.album.meta.type;
                 }
 
@@ -189,11 +192,11 @@ const uiUpdater = {
 
                 coverUri = `https://${pageData.artist.meta.artist.coverUri.replace(/%%/g, cQR)}`;
 
-                if (pageData.artist.familiarSubpage){
-                    trackIds =  pageData.artist.familiarSubpage.vibeTracks.map(track => track?.id);
-                    title =  `Знакомое вам от - ${title}`;
+                if (pageData.artist.familiarSubpage) {
+                    trackIds = pageData.artist.familiarSubpage.vibeTracks.map(track => track?.id);
+                    title = `Знакомое вам от - ${title}`;
                 } else {
-                    trackIds =  pageData.artist.fullTracksListSubpage.ids;
+                    trackIds = pageData.artist.fullTracksListSubpage.ids;
                 }
 
                 playlistPanelTitle.innerText = `Исполнитель: ${title}`;
@@ -212,24 +215,24 @@ const uiUpdater = {
                     eventHandlers.downloadTracks(aYa_tabID, trackIds, `artist/${escapeFileName(title)}`);
                 });
                 break;
-                case 'playlists':
-                case 'playlist':
+            case 'playlists':
+            case 'playlist':
 
-                    title = pageData.playlist.meta.title;
-                    coverUri = `https://${pageData.playlist.meta.coverUri.replace(/%%/g, cQR)}`;
-                    trackIds = (Array.isArray(pageData.playlist.items) ? pageData.playlist.items : Object.values(pageData.playlist.items)).map(track => track?.id);
-                    totalTracks = trackIds.length;
-                    playlistPanelTitle.innerText = `${title}`;
-                    playlistPanelImage.src = coverUri;
-                    playlistPanelMeta.innerHTML = `Автор: ${pageData.playlist.meta.owner.name}<br>Кол-во: ${totalTracks}`;
+                title = pageData.playlist.meta.title;
+                coverUri = `https://${pageData.playlist.meta.coverUri.replace(/%%/g, cQR)}`;
+                trackIds = (Array.isArray(pageData.playlist.items) ? pageData.playlist.items : Object.values(pageData.playlist.items)).map(track => track?.id);
+                totalTracks = trackIds.length;
+                playlistPanelTitle.innerText = `${title}`;
+                playlistPanelImage.src = coverUri;
+                playlistPanelMeta.innerHTML = `Автор: ${pageData.playlist.meta.owner.name}<br>Кол-во: ${totalTracks}`;
 
-                    let rangeWrapper = document.getElementById('playlistDownloadWrapper');
-                    if (!rangeWrapper) {
-                        rangeWrapper = document.createElement('div');
-                        rangeWrapper.id = 'playlistDownloadWrapper';
-                        rangeWrapper.style.marginBottom = '15px';
+                let rangeWrapper = document.getElementById('playlistDownloadWrapper');
+                if (!rangeWrapper) {
+                    rangeWrapper = document.createElement('div');
+                    rangeWrapper.id = 'playlistDownloadWrapper';
+                    rangeWrapper.style.marginBottom = '15px';
 
-                        rangeWrapper.innerHTML = `
+                    rangeWrapper.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.9rem;">
                 <span id="rangeLabelText" class="text-muted">Выбрано треков:</span>
                 <b id="rangeValueDisplay" class="text-primary">1 — ${totalTracks}</b>
@@ -241,61 +244,61 @@ const uiUpdater = {
                 <input type="range" class="form-range" id="rangeEnd" min="1" step="1">
             </div>
         `;
-                        playlistPanelMetaDownloadBtn.parentNode.insertBefore(rangeWrapper, playlistPanelMetaDownloadBtn);
-                    }
+                    playlistPanelMetaDownloadBtn.parentNode.insertBefore(rangeWrapper, playlistPanelMetaDownloadBtn);
+                }
 
-                    const rStart = document.getElementById('rangeStart');
-                    const rEnd = document.getElementById('rangeEnd');
-                    const rDisplay = document.getElementById('rangeValueDisplay');
+                const rStart = document.getElementById('rangeStart');
+                const rEnd = document.getElementById('rangeEnd');
+                const rDisplay = document.getElementById('rangeValueDisplay');
 
-                    // Настройка параметров (показываем только если треков > 1)
-                    if (totalTracks > 1) {
-                        rangeWrapper.style.display = 'block';
-                        rStart.max = totalTracks;
-                        rEnd.max = totalTracks;
+                // Настройка параметров (показываем только если треков > 1)
+                if (totalTracks > 1) {
+                    rangeWrapper.style.display = 'block';
+                    rStart.max = totalTracks;
+                    rEnd.max = totalTracks;
 
-                        // По умолчанию — ВСЕ
-                        rStart.value = 1;
-                        rEnd.value = totalTracks;
+                    // По умолчанию — ВСЕ
+                    rStart.value = 1;
+                    rEnd.value = totalTracks;
 
-                        const updateRangeUI = () => {
-                            let s = parseInt(rStart.value);
-                            let e = parseInt(rEnd.value);
+                    const updateRangeUI = () => {
+                        let s = parseInt(rStart.value);
+                        let e = parseInt(rEnd.value);
 
-                            // Валидация: начало не может быть больше конца
-                            if (s > e) {
-                                rStart.value = e;
-                                s = e;
-                            }
+                        // Валидация: начало не может быть больше конца
+                        if (s > e) {
+                            rStart.value = e;
+                            s = e;
+                        }
 
-                            rDisplay.innerText = (s === 1 && e === totalTracks)
-                                ? `Все (${totalTracks})`
-                                : `${s} — ${e} (шт: ${e - s + 1})`;
-                        };
-
-                        rStart.oninput = updateRangeUI;
-                        rEnd.oninput = updateRangeUI;
-                        updateRangeUI();
-                    } else {
-                        rangeWrapper.style.display = 'none';
-                    }
-
-                    playlistPanelMetaDownloadBtn.innerText = 'Скачать выбранное';
-                    playlistPanelMetaDownloadBtn.style.display = 'flex';
-                    playlistPanelMetaDownloadBtn.style.width = '100%';
-
-                    playlistPanelMetaDownloadBtn.onclick = () => {
-                        const startIdx = parseInt(rStart.value) - 1; // в индекс массива
-                        const endIdx = parseInt(rEnd.value);
-
-                        // Формируем массив согласно выбранному диапазону
-                        const idsToDownload = trackIds.slice(startIdx, endIdx);
-
-                        eventHandlers.downloadTracks(aYa_tabID, idsToDownload, `playlist/${title}`);
+                        rDisplay.innerText = (s === 1 && e === totalTracks)
+                            ? `Все (${totalTracks})`
+                            : `${s} — ${e} (шт: ${e - s + 1})`;
                     };
 
+                    rStart.oninput = updateRangeUI;
+                    rEnd.oninput = updateRangeUI;
+                    updateRangeUI();
+                } else {
+                    rangeWrapper.style.display = 'none';
+                }
 
-                    break;
+                playlistPanelMetaDownloadBtn.innerText = 'Скачать выбранное';
+                playlistPanelMetaDownloadBtn.style.display = 'flex';
+                playlistPanelMetaDownloadBtn.style.width = '100%';
+
+                playlistPanelMetaDownloadBtn.onclick = () => {
+                    const startIdx = parseInt(rStart.value) - 1; // в индекс массива
+                    const endIdx = parseInt(rEnd.value);
+
+                    // Формируем массив согласно выбранному диапазону
+                    const idsToDownload = trackIds.slice(startIdx, endIdx);
+
+                    eventHandlers.downloadTracks(aYa_tabID, idsToDownload, `playlist/${title}`);
+                };
+
+
+                break;
             default:
                 col_one.classList.add('col-12');
                 col_two.classList.add('d-none');
@@ -331,25 +334,28 @@ const eventHandlers = {
     },
 
     onDOMContentLoaded() {
+        //Первичный запрос данных при открытии popup
         storageService.getStorageData((result) => {
-            //console.log('ss',result)
             if (result.aYa_db) {
-
-
                 uiUpdater.updateUI(result.aYa_db, result.aYa_tabID, result);
-
-                storageService.monitorStorageChanges((changes) => {
-                    const {newValue, oldValue} = changes.aYa_db;
-                    if (newValue?.aYa_cureitTrack !== oldValue?.aYa_cureitTrack || newValue?.aYa_page !== oldValue?.aYa_page) {
-                        window.location.reload();
-                    }
-                });
-
-
             } else {
                 console.log('Нет данных в chrome.storage.local');
-                document.querySelector('body .container-fluid').innerHTML = 'Обновите страницу, Яндекс Музыки, потом вернитесь сюда)';
-                window.location.reload();
+                document.querySelector('body .container-fluid').innerHTML = 'Обновите страницу Яндекс Музыки, потом вернитесь сюда)';
+            }
+        });
+
+        //Постоянный мониторинг изменений (на одном уровне, а не внутри колбэка)
+        storageService.monitorStorageChanges((changes) => {
+            // Проверяем, затронули ли изменения именно ключ aYa_db
+            if (changes.aYa_db) {
+                const {newValue, oldValue} = changes.aYa_db;
+
+                // Используем ?. на случай, если oldValue или newValue равны undefined
+                if (newValue?.aYa_cureitTrack !== oldValue?.aYa_cureitTrack ||
+                    newValue?.aYa_page !== oldValue?.aYa_page) {
+
+                    window.location.reload();
+                }
             }
         });
     },

@@ -48,11 +48,13 @@
                 });
 
                 observer.observe(document, {childList: true, subtree: true});
+
+                appYa.monitorAudioConstructor();
+                appYa.parsePage();
+                appYa.monitorFetchRequests();
             }
 
-            appYa.monitorAudioConstructor();
-            appYa.parsePage();
-            appYa.monitorFetchRequests();
+
         },
 
         monitorAudioConstructor: function () {
@@ -512,7 +514,8 @@
                 const allData = JSON.stringify({'download': blobUrl, 'trackinfo': trackInfo});
                 return allData;
             } catch (error) {
-                console.error('Error fetching file info:', error);
+                //console.error('Error fetching file info:', error);
+                return null;
             }
         },
 

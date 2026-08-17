@@ -38,7 +38,6 @@ const checkLocalStorageUpdates = () => {
             // Обновляем предыдущее состояние
             previousState = currentState;
 
-
             // Отправляем обновленные данные в background.js
             chrome.runtime.sendMessage({
                 action: "send_localStorage",
