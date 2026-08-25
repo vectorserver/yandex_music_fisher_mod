@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const savehistory = document.getElementById('savehistory');
     const numberingCheckbox = document.getElementById('numberingTracks');
     const trackExample = document.getElementById('trackExample');
-
-
+    // Добавляем DOM-элемент для нового чекбокса ИИ
+    const aiCheckbox = document.getElementById('aiSuspicion');
 
     // Функция для скрытия/показа текста
     const updateExample = () => {
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     };
 
-    //Восстановление сохраненных настроек
+    // Восстановление сохраненных настроек
     const data = await chrome.storage.local.get('app_setting');
     if (data.app_setting) {
         folderInput.value = data.app_setting.downloadFolder || 'music/';
@@ -28,13 +28,17 @@ document.addEventListener('DOMContentLoaded', async function () {
         downlodadCount.value = data.app_setting.downlodadCount || 4;
         savehistory.value = data.app_setting.savehistory || 0;
         numberingCheckbox.checked = data.app_setting.numberingTracks || false;
+        // Восстанавливаем состояние чекбокса ИИ (по умолчанию false)
+        if (aiCheckbox) {
+            aiCheckbox.checked = data.app_setting.aiSuspicion || false;
+        }
         updateExample();
     }
 
-    //Слушатель клика по галке
+    // Слушатель клика по галке
     numberingCheckbox.addEventListener('change', updateExample);
 
-    //Обработчик сохранения
+    // Обработчик сохранения
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
@@ -44,7 +48,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             audioQuality: audioSelect.value || 'nq',
             downlodadCount: parseInt(downlodadCount.value || 4),
             savehistory: savehistory.value || '0',
-            numberingTracks: numberingCheckbox.checked
+            numberingTracks: numberingCheckbox.checked,
+            // Добавляем значение чекбокса ИИ в объект настроек
+            aiSuspicion: aiCheckbox ? aiCheckbox.checked : false
         };
 
         await chrome.storage.local.set({ app_setting: settings_submit });

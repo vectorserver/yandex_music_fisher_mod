@@ -28,7 +28,11 @@ chrome.storage.local.get('app_setting', (result) => {
 let previousState = JSON.stringify(localStorage);
 // Функция для проверки изменений в localStorage
 const checkLocalStorageUpdates = () => {
+
+    if (!chrome.runtime || !chrome.runtime.id) return;
+
     try {
+
         // Получаем текущее состояние localStorage
         let currentState = JSON.stringify(localStorage);
 
@@ -51,7 +55,7 @@ const checkLocalStorageUpdates = () => {
             });
         }
     } catch (error) {
-        console.error("Ошибка при проверке localStorage:", error);
+        console.log("Ошибка при проверке localStorage:", error);
     }
 };
 

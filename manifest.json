@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Yandex Music Fisher mod by vectorserver",
-  "version": "2.1.41",
+  "version": "2.1.42",
   "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
   "icons": {
     "128": "icons/music_by_pancaza.png"
@@ -18,11 +18,6 @@
     {
       "matches": [
         "https://api.music.yandex.ru/*",
-        "https://next.music.yandex.com/*",
-        "https://next.music.yandex.ru/*",
-        "https://next.music.yandex.kz/*",
-        "https://next.music.yandex.by/*",
-        "https://next.music.yandex.uz/*",
         "https://*.strm.yandex.net/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.com/*",
@@ -50,6 +45,6 @@
   ],
   "incognito": "split",
   "options_page": "html/options.html",
-  "homepage_url": "https://vk.com/vectorserver",
-  "update_url": "https://extension-updates.opera.com/api/omaha/update/"
+  "homepage_url": "https://github.com/vectorserver/yandex_music_fisher_mod",
+  "update_url": "https://github.com/vectorserver/yandex_music_fisher_mod/update/"
 }
