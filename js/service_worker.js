@@ -67,6 +67,8 @@ const downloadManager = {
 
 
         let batchSize = settings?.app_setting?.downlodadCount ?? 4;
+        const startNumber = message.startNumber ?? 1;
+        const numberPadWidth = Math.max(2, String(startNumber + trackIds.length - 1).length);
         globalCount += trackIds.length;
         let bg = badgeManager.getRandomColor();
         badgeManager.updateBadge(globalCount, bg);
@@ -74,8 +76,9 @@ const downloadManager = {
         for (let i = 0; i < trackIds.length; i += batchSize) {
             const batch = trackIds.slice(i, i + batchSize);
 
-            await Promise.all(batch.map(trackId =>
+            await Promise.all(batch.map((trackId, batchIndex) =>
                 new Promise((resolve, reject) => {
+                    const trackNumber = startNumber + i + batchIndex;
                     const dataToInject = `appYa.fetchFileInfoOne(${trackId})`;
 
                     chrome.scripting.executeScript({
@@ -138,7 +141,7 @@ const downloadManager = {
                                     }
 
 
-                                    downloadManager.downloadFile(inputData, playlistName, settings);
+                                    downloadManager.downloadFile(inputData, playlistName, settings, trackNumber, numberPadWidth);
                                 }
                                 resolve(trackId);
                             } else {
@@ -168,7 +171,7 @@ const downloadManager = {
         }
     },
 
-    downloadFile(inputData, playlistName, settings) {
+    downloadFile(inputData, playlistName, settings, trackNumber, numberPadWidth = 2) {
 
         //console.log('[service_worker.js] inputData',inputData)
         //console.log('[service_worker.js] playlistName',playlistName)
@@ -179,17 +182,13 @@ const downloadManager = {
         let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
         let title = inputData.trackinfo.title;
         if (title.length >= 90) {
-            const trackIdx = inputData.trackinfo?.albums?.[0]?.trackPosition?.index;
-            title = `${trackIdx}_${inputData.trackinfo.id}`;
+            title = `${trackNumber ?? inputData.trackinfo.id}_${inputData.trackinfo.id}`;
         }
 
         let trackPrefix = '';
-        if (settings?.app_setting?.numberingTracks === true) {
-            // 2. Исправлено обращение к массиву: [0] вместо .[0]
-            const trackIdx = inputData.trackinfo?.albums?.[0]?.trackPosition?.index;
-            trackPrefix = trackIdx
-                ? trackIdx.toString().padStart(2, '0') + '. '
-                : '';
+        if (settings?.app_setting?.numberingTracks === true && trackNumber != null) {
+            // Нумерация по порядку в плейлисте/списке, а не по номеру трека в альбоме
+            trackPrefix = trackNumber.toString().padStart(numberPadWidth, '0') + '. ';
         }
         let fileName = `${playlistName}/${trackPrefix}${escapeFileName(artists)} - ${escapeFileName(title)}.mp3`;
 
