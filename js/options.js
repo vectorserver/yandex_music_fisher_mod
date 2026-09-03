@@ -55,6 +55,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         await chrome.storage.local.set({ app_setting: settings_submit });
         alert('Настройки сохранены!');
-        console.log('Настройки сохранены!', settings_submit);
+        console.log('[appYa] Настройки сохранены!', settings_submit);
     });
 });

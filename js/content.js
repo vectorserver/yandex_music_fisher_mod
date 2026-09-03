@@ -1,12 +1,12 @@
 // Выводим в консоль информацию о запуске content.js
-console.log('content.js loaded');
+console.log('[appYa] content.js loaded');
 
 // Отправляем сообщение в background.js с командой "inject_parser"
 chrome.runtime.sendMessage({action: "inject_parser"}, (data) => {
     if (chrome.runtime.lastError) {
         //console.error("Ошибка при отправке inject_parser:", chrome.runtime.lastError.message);
     } else {
-        //console.log('inject_parser выполнен успешно:', data);
+        //console.log('[appYa] inject_parser выполнен успешно:', data);
     }
 });
 
@@ -16,7 +16,7 @@ chrome.storage.local.get('app_setting', (result) => {
     if (result.app_setting) {
         // Копируем каждую настройку в localStorage
         for (const [key, value] of Object.entries(result.app_setting)) {
-            console.log('aYa_setting_' + key, value)
+            console.log('[appYa] aYa_setting_' + key, value)
             localStorage.setItem('aYa_setting_' + key, value);
         }
 
@@ -29,7 +29,7 @@ let previousState = JSON.stringify(localStorage);
 // Функция для проверки изменений в localStorage
 const checkLocalStorageUpdates = () => {
 
-    if (!chrome.runtime || !chrome.runtime.id) return;
+    //if (!chrome.runtime || !chrome.runtime.id) return;
 
     try {
 
@@ -48,14 +48,14 @@ const checkLocalStorageUpdates = () => {
                 data: {...window.localStorage} // Передаем копию localStorage
             }, (response) => {
                 if (chrome.runtime.lastError) {
-                    //console.error("Ошибка отправки данных в background.js:", chrome.runtime.lastError.message);
+                    //console.error("[appYa] Ошибка отправки данных в background.js:", chrome.runtime.lastError.message);
                 } else {
-                    //console.log("Ответ от background.js на send_localStorage:", response);
+                    //console.log("[appYa] Ответ от background.js на send_localStorage:", response);
                 }
             });
         }
     } catch (error) {
-        console.log("Ошибка при проверке localStorage:", error);
+        console.log("[appYa] Ошибка при проверке localStorage:", error);
     }
 };
 

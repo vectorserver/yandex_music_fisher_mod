@@ -1,4 +1,4 @@
-console.log('js/popup.js');
+console.log('[appYa] js/popup.js');
 
 const appVersion = document.getElementById('appv');
 const appVersionLogin = document.getElementById('appvLogin');
@@ -54,7 +54,7 @@ const uiUpdater = {
         const parsedData = parser.parseStorage(data);
         const cQ = app?.app_setting?.coverQuality ?? 300;
         var cQR = `${cQ}x${cQ}`;
-        console.log('coverQuality', cQR)
+        console.log('[appYa] coverQuality', cQR)
 
         const authorizationPanel = document.getElementById('authorization');
         const authorizationBtn = authorizationPanel.querySelector('#authorize');
@@ -77,8 +77,8 @@ const uiUpdater = {
                     window.close();
                 });
             });
-            //console.log('parsedData',parsedData)
-            //console.log('aYa_page',parsedData.aYa_page)
+            //console.log('[appYa] parsedData',parsedData)
+            //console.log('[appYa] aYa_page',parsedData.aYa_page)
         } else {
             authorizationPanel.style.display = 'flex';
             authorizationBtn.setAttribute('href', parsedData.aYa_authorizationUrl);
@@ -92,7 +92,7 @@ const uiUpdater = {
                         if (chrome.runtime.lastError) {
                             console.error(chrome.runtime.lastError);
                         } else {
-                            console.log('Вкладка закрыта.');
+                            console.log('[appYa] Вкладка закрыта.');
                         }
                     });
                 });
@@ -101,7 +101,7 @@ const uiUpdater = {
     },
 
     updateTrackInfo(parsedData, aYa_tabID, cQR) {
-        console.log('updateTrackInfo', parsedData, aYa_tabID, cQR)
+        console.log('[appYa] updateTrackInfo', parsedData, aYa_tabID, cQR)
         if (!parsedData.aYa_cureitTrack) {
             document.querySelector('body .container-fluid').innerHTML =
                 'Включите трек, Яндекс Музыки, потом вернитесь сюда)';
@@ -131,7 +131,7 @@ const uiUpdater = {
     updatePlaylistInfo(parsedData, aYa_tabID, cQR) {
         const pageThis = parsedData.aYa_page?.location?.pathname?.split('/')[1] ?? '';
         const pageData = parsedData.aYa_page;
-        console.log('pageThis', pageThis, pageData);
+        console.log('[appYa] pageThis', pageThis, pageData);
         let year = '';
         let title = '';
         let trackIds = [];
@@ -339,7 +339,7 @@ const eventHandlers = {
             if (result.aYa_db) {
                 uiUpdater.updateUI(result.aYa_db, result.aYa_tabID, result);
             } else {
-                console.log('Нет данных в chrome.storage.local');
+                console.log('[appYa] Нет данных в chrome.storage.local');
                 document.querySelector('body .container-fluid').innerHTML = 'Обновите страницу Яндекс Музыки, потом вернитесь сюда)';
             }
         });
@@ -381,7 +381,7 @@ const eventHandlers = {
                 if (chrome.runtime.lastError) {
                     console.error('Ошибка при изменении URL:', chrome.runtime.lastError);
                 } else {
-                    console.log('URL успешно изменен на:', url);
+                    console.log('[appYa] URL успешно изменен на:', url);
                 }
             });
         }

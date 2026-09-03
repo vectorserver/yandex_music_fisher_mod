@@ -92,7 +92,7 @@
                                     appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
                                         if (cureitTrack){
                                             localStorage.setItem('aYa_cureitTrack', cureitTrack);
-                                            console.log('aYa_cureitTrack',trackId)
+                                            console.log('[appYa] aYa_cureitTrack',trackId)
                                         }
 
                                     }).catch(() => {
@@ -555,7 +555,7 @@
 
                 const allPatches = mergedObject.flat();
                 const finalTree = {};
-                console.log('finalTree',allPatches)
+                console.log('[appYa] finalTree',allPatches)
 
                 allPatches.forEach(patch => {
                     if (!patch || !patch.path) return;
@@ -675,7 +675,7 @@
 
 
                 const currentDataString = JSON.stringify(finalTree);
-                console.log('allPatches', finalTree);
+                console.log('[appYa] allPatches', finalTree);
                 localStorage.setItem('aYa_page', currentDataString);
 
             } catch (error) {

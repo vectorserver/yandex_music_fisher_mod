@@ -1,5 +1,5 @@
 // Выводим в консоль информацию о запуске service_worker.js
-console.log('service_worker.js loaded');
+console.log('[appYa] service_worker.js loaded');
 
 
 const appService = {
@@ -170,9 +170,9 @@ const downloadManager = {
 
     downloadFile(inputData, playlistName, settings) {
 
-        //console.log('[service_worker.js] inputData',inputData)
-        //console.log('[service_worker.js] playlistName',playlistName)
-        //console.log('[service_worker.js] settings',settings)
+        //console.log('[appYa] [service_worker.js] inputData',inputData)
+        //console.log('[appYa] [service_worker.js] playlistName',playlistName)
+        //console.log('[appYa] [service_worker.js] settings',settings)
 
 
         const escapeFileName = (fileName) => fileName.replace(/[\\/:*?"<>|]/g, '_');
@@ -193,7 +193,7 @@ const downloadManager = {
         }
         let fileName = `${playlistName}/${trackPrefix}${escapeFileName(artists)} - ${escapeFileName(title)}.mp3`;
 
-        console.log('[service_worker.js] fileName', fileName);
+        console.log('[appYa] [service_worker.js] fileName', fileName);
 
         //Тут нужно еще проверка о том что файл существует settings?.app_setting.checkexists если есть то не качаем
         chrome.downloads.download({
@@ -269,7 +269,7 @@ const worker = {
         }
 
         if (message.action === "download_Tracks") {
-            console.log('download_Tracks', message);
+            console.log('[appYa] download_Tracks', message);
             sendResponse({download_Tracks: message});
             downloadManager.downloadTracks(message, this.globalCount);
             return true;
@@ -293,7 +293,7 @@ const worker = {
                 }
 
                 // Логируем данные для отладки
-                console.log('download_SFIFT+D', downData)
+                console.log('[appYa] download_SFIFT+D', downData)
 
                 // Вызываем менеджер загрузок для скачивания трека(ов)
                 // this.globalCount - глобальный счетчик загрузок (для нумерации/отслеживания)
