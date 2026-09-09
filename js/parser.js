@@ -56,60 +56,75 @@
 
 
         },
-
         monitorAudioConstructor: function () {
-            const OriginalAudio = window.Audio;
-            window.Audio = function (...args) {
-                const audioInstance = new OriginalAudio(...args);
+            console.log('[appYa] Мониторинг плеера запущен через setInterval');
 
-                audioInstance.addEventListener('loadstart', () => {
-                    const currentSrc = audioInstance.src || audioInstance.currentSrc;
-                    if (currentSrc && (currentSrc.includes('strm.yandex.net') || currentSrc.includes('container=mp4'))) {
-                        localStorage.setItem('aYa_last_stream_url', currentSrc);
-                    }
-                });
+            // Настройка ИИ из /js/options.js
+            let aiSuspicion = localStorage.getItem('aYa_setting_aiSuspicion');
 
-                return audioInstance;
-            };
-            window.Audio.prototype = OriginalAudio.prototype;
+            if (typeof appYa.previousTrackHref === 'undefined') {
+                appYa.previousTrackHref = '';
+            }
 
-            const originalCreateElement = document.createElement;
-            document.createElement = function (tagName, ...args) {
-                const element = originalCreateElement.apply(this, [tagName, ...args]);
+            setInterval(() => {
+                const elementPlayer = document.querySelector('section[class^="PlayerBar"] a[href*="/track/"]') ||
+                    document.querySelector('a[href*="/track/"]');
 
-                if (tagName && tagName.toLowerCase() === 'audio') {
-                    element.addEventListener('loadstart', () => {
-                        const currentSrc = element.src || element.currentSrc;
-                        if (currentSrc && (currentSrc.includes('strm.yandex.net') || currentSrc.includes('container=mp4'))) {
+                if (elementPlayer && elementPlayer.href) {
+                    const currentHref = elementPlayer.href;
 
-                            try {
-                                const match = currentSrc.match(/[a-f0-9]{8}\.\d+\.\d+\.(\d+)\/[a-z0-9-]+/i);
+                    if (currentHref !== appYa.previousTrackHref) {
+                        appYa.previousTrackHref = currentHref;
 
-                                if (match && match[1]) {
-                                    const trackId = match[1];
-                                    appYa.previousTrackHref = `/track/${trackId}`;
+                        console.log('%c[appYa] Новый трек отловлен:', 'color: #00ff00; font-weight: bold;', currentHref);
 
-                                    appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
-                                        if (cureitTrack){
-                                            localStorage.setItem('aYa_cureitTrack', cureitTrack);
-                                            console.log('[appYa] aYa_cureitTrack',trackId)
+                        const match = currentHref.match(/\/track\/(\d+)/);
+                        if (match && match[1]) {
+                            const trackId = match[1];
+
+                            appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
+                                if (cureitTrack) {
+                                    localStorage.setItem('aYa_cureitTrack', cureitTrack);
+
+                                    try {
+                                        const trackData = typeof cureitTrack === 'string' ? JSON.parse(cureitTrack) : cureitTrack;
+                                        const credits = trackData?.trackinfo?.credits || [];
+
+                                        const isAI = credits.some(item =>
+                                            item.title === "Использование ИИ" ||
+                                            (item.value && item.value.toLowerCase().includes("ии"))
+                                        );
+
+                                        //Дизлайкаем только если в опциях включено aiSuspicion
+                                        if (isAI && aiSuspicion === 'true') {
+                                            console.log('[appYa] Обнаружен ИИ-трек! Ставим дизлайк...');
+
+                                            //Ищем и кликаем кнопку "Не нравится" (дизлайк)
+                                            const dislikeButton = document.querySelector('[aria-label="Не нравится"]:not([aria-pressed="true"])');
+                                            if (dislikeButton) {
+                                                dislikeButton.click();
+                                                console.log('[appYa] Успешно отправлен дизлайк ИИ-треку.');
+                                            } else {
+                                                console.warn('[appYa] Кнопка "Не нравится" не найдена, пробуем обычный пропуск.');
+
+                                                // Запасной вариант: если кнопки дизлайка нет (например, в некоторых плейлистах), просто листаем вперед
+                                                const nextButton = document.querySelector('[aria-label="Следующая песня"]');
+                                                if (nextButton) nextButton.click();
+                                            }
+                                        } else if (isAI) {
+                                            console.log('[appYa] Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
                                         }
-
-                                    }).catch(() => {
-                                    });
-
-
-                                    appYa.renderFloatingDownloadButton(trackId);
+                                    } catch (e) {
+                                        console.error('[appYa] Ошибка разбора JSON:', e);
+                                    }
                                 }
-                            } catch (e) {
-                                // Silent catch
-                            }
-                        }
-                    });
-                }
+                            }).catch(() => {});
 
-                return element;
-            };
+                            appYa.renderFloatingDownloadButton(trackId);
+                        }
+                    }
+                }
+            }, 1000);
         },
 
 
@@ -148,7 +163,10 @@
                 btn.id = 'appYa-floating-download-btn';
 
                 // Загружаем сохраненные ПРОЦЕНТНЫЕ координаты
-                const savedCoords = JSON.parse(localStorage.getItem('aYa_btn_coords_pct')) || { bottom: '95px', right: '25px' };
+                const savedCoords = JSON.parse(localStorage.getItem('aYa_btn_coords_pct')) || {
+                    bottom: '95px',
+                    right: '25px'
+                };
 
                 Object.assign(btn.style, {
                     position: 'fixed',
@@ -172,10 +190,29 @@
                     transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, box-shadow 0.2s ease',
                 });
 
-                btn.onmouseenter = () => { if (!btn.dataset.dragging) { btn.style.animationPlayState = 'paused'; btn.style.transform = 'scale(1.12) translateY(-2px)'; } };
-                btn.onmouseleave = () => { if (!btn.dataset.dragging) { btn.style.animationPlayState = 'running'; btn.style.transform = 'scale(1) translateY(0)'; } };
-                btn.onmousedown = () => { if (!btn.dataset.dragging) { btn.style.animation = 'none'; btn.style.transform = 'scale(0.95)'; } };
-                btn.onmouseup = () => { if (!btn.dataset.dragging) { btn.style.transform = 'scale(1.12) translateY(-2px)'; } };
+                btn.onmouseenter = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.animationPlayState = 'paused';
+                        btn.style.transform = 'scale(1.12) translateY(-2px)';
+                    }
+                };
+                btn.onmouseleave = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.animationPlayState = 'running';
+                        btn.style.transform = 'scale(1) translateY(0)';
+                    }
+                };
+                btn.onmousedown = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.animation = 'none';
+                        btn.style.transform = 'scale(0.95)';
+                    }
+                };
+                btn.onmouseup = () => {
+                    if (!btn.dataset.dragging) {
+                        btn.style.transform = 'scale(1.12) translateY(-2px)';
+                    }
+                };
 
                 // ЛОГИКА АДАПТИВНОГО DRAG & DROP
                 let isDragging = false;
@@ -449,9 +486,18 @@
 
             const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
             const urlInfo = `${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`;
+            const urlСredits = `${appYa.apiUrl}tracks/${trackId}/credits/?byVectorserver=1`;
 
             try {
-                const [response1, response2] = await Promise.all([fetch(url, {headers}), fetch(urlInfo, {headers})]);
+                const [
+                    response1,
+                    response2,
+                    response3
+                ] = await Promise.all([
+                    fetch(url, {headers}),
+                    fetch(urlInfo, {headers}),
+                    fetch(urlСredits, {headers}),
+                ]);
 
                 if (!response1.ok) {
                     throw new Error(`HTTP error! status: ${response1.status}`);
@@ -459,12 +505,19 @@
                 if (!response2.ok) {
                     throw new Error(`HTTP error! status: ${response2.status}`);
                 }
+                if (!response3.ok) {
+                    throw new Error(`HTTP error! status: ${response2.status}`);
+                }
 
                 const data1 = await response1.json();
                 const data2 = await response2.json();
+                const data3 = await response3.json();
 
                 const downloadUrl = data1.result.downloadInfo.url;
                 const trackInfo = data2.result[0];
+                if (data3) {
+                    trackInfo['credits'] = data3.result.credits || [];
+                }
 
                 const response = await fetch(downloadUrl);
                 if (!response.ok) {
@@ -475,8 +528,8 @@
                 const aYa_setting_coverQuality = localStorage.getItem('aYa_setting_coverQuality') ?? '400';
                 let qq = `${aYa_setting_coverQuality}x${aYa_setting_coverQuality}`
 
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) +"/?byVectorserver=1";
-                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq) +"/?byVectorserver=1";
+                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) + "/?byVectorserver=1";
+                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq) + "/?byVectorserver=1";
 
                 const coverResponse = await fetch(`https://${coverUrl}`);
                 //const artistcoverResponse = await fetch(`https://${artistUrl}`);
@@ -501,9 +554,9 @@
                     .setFrame('APIC', {
                         type: 3, data: coverData, description: 'Cover (front)'
                     }).addTag();
-                    /*.setFrame('APIC', {
-                        type: 17, data: artistcoverResponseData, description: 'Band Logo'
-                    })*/
+                /*.setFrame('APIC', {
+                    type: 17, data: artistcoverResponseData, description: 'Band Logo'
+                })*/
 
 
                 const updatedMp3 = writer.arrayBuffer;
@@ -555,14 +608,13 @@
 
                 const allPatches = mergedObject.flat();
                 const finalTree = {};
-                console.log('[appYa] finalTree',allPatches)
+                console.log('[appYa] finalTree', allPatches)
 
                 allPatches.forEach(patch => {
                     if (!patch || !patch.path) return;
 
                     const keys = patch.path.split('/').filter(Boolean);
                     let current = finalTree;
-
 
 
                     for (let i = 0; i < keys.length - 1; i++) {
@@ -643,7 +695,6 @@
                     if (!patch || typeof patch !== 'object' || !patch.path) return;
 
 
-
                     const keys = patch.path.split('/').filter(Boolean);
                     let current = finalTree;
 
@@ -708,7 +759,6 @@
                 }
 
 
-
                 let response = await originalFetch(url, options);
                 let clonedResponse = response.clone();
 
@@ -731,33 +781,6 @@
 
                 return response;
             };
-        },
-
-        addImageToAudio: async function (audioURL, imageURL) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const audioResponse = await fetch(audioURL);
-                    const audioArrayBuffer = await audioResponse.arrayBuffer();
-
-                    const imageResponse = await fetch(imageURL);
-                    const imageArrayBuffer = await imageResponse.arrayBuffer();
-
-                    if (imageResponse && audioResponse) {
-                        var writer = new ID3Writer(audioArrayBuffer);
-                        writer
-                            .setFrame('APIC', {
-                                type: 3, data: imageArrayBuffer, description: 'Super picture',
-                            });
-                        writer.addTag();
-
-                        const newBlob = new Blob([writer.arrayBuffer], {type: 'audio/mpeg'});
-                        const url = URL.createObjectURL(newBlob);
-                        resolve(url);
-                    }
-                } catch (error) {
-                    reject(new Error(`Ошибка при добавлении изображения: ${error.message}`));
-                }
-            });
         }
     }
 
