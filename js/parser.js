@@ -66,9 +66,96 @@
                 appYa.previousTrackHref = '';
             }
 
+            // Сюда будет сохраняться актуальная blob-ссылка на поток
+            appYa.currentAudioStreamUrl = '';
+
+            // 🔥 Перехватываем метод play прямо внутри конструктора метода
+            if (!HTMLMediaElement.prototype.originalPlay) {
+                HTMLMediaElement.prototype.originalPlay = HTMLMediaElement.prototype.play;
+
+                HTMLMediaElement.prototype.play = function () {
+                    // Сохраняем ссылку на объект плеера из оперативной памяти
+                    window.currentActiveMediaElement = this;
+                    return this.originalPlay.apply(this, arguments);
+                };
+                console.log('[appYa] Ловушка HTMLMediaElement.prototype.play успешно развернута');
+            }
+
             setInterval(() => {
-                const elementPlayer = document.querySelector('section[class^="PlayerBar"] a[href*="/track/"]') ||
-                    document.querySelector('a[href*="/track/"]');
+                const elementPlayer = document.querySelector('section[class^="PlayerBar"] a[href*="/track/"]');
+
+                if (window.currentActiveMediaElement) {
+                    const streamUrl = window.currentActiveMediaElement.currentSrc || window.currentActiveMediaElement.src;
+
+                    // Если ссылка появилась и она обновилась — сохраняем в объект appYa
+                    if (streamUrl && streamUrl !== appYa.currentAudioStreamUrl) {
+                        appYa.currentAudioStreamUrl = streamUrl;
+                        //console.log('%c[appYa] Ссылка на аудиопоток в памяти обновлена:', 'color: #00ffcc; font-weight: bold;', streamUrl);
+                        const match = streamUrl.match(/\.(\d+)\/(?:aac|mp3|mp4)/);
+
+                        if (match && match[1]) {
+                            const trackId = match[1];
+
+
+                            appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
+                                if (cureitTrack) {
+                                    localStorage.setItem('aYa_cureitTrack', cureitTrack);
+                                    console.log('[appYa] trackId', trackId);
+                                    console.log('[appYa] aiSuspicion', aiSuspicion);
+
+                                    try {
+                                        const trackData = typeof cureitTrack === 'string' ? JSON.parse(cureitTrack) : cureitTrack;
+                                        const credits = trackData?.trackinfo?.credits || [];
+
+                                        const isAI = credits.some(item =>
+                                            item.title === "Использование ИИ" ||
+                                            (item.value && item.value.toLowerCase().includes("ии"))
+                                        );
+
+                                        //Дизлайкаем только если в опциях включено aiSuspicion
+                                        if (isAI && aiSuspicion === 'true') {
+                                            console.log('[appYa] Обнаружен ИИ-трек! Ставим дизлайк...');
+
+                                            //Ищем и кликаем кнопку "Не нравится" (дизлайк)
+                                            const dislikeButton = document.querySelector('[aria-label="Не нравится"]:not([aria-pressed="true"])');
+                                            if (dislikeButton) {
+                                                dislikeButton.click();
+                                                console.log('[appYa] Успешно отправлен дизлайк ИИ-треку.');
+                                            } else {
+                                                console.warn('[appYa] Кнопка "Не нравится" не найдена, пробуем обычный пропуск.');
+
+                                                // Запасной вариант: если кнопки дизлайка нет (например, в некоторых плейлистах), просто листаем вперед
+                                                const nextButton = document.querySelector('[aria-label="Следующая песня"]');
+                                                if (nextButton) nextButton.click();
+                                            }
+                                        } else if (isAI) {
+                                            console.log('[appYa] Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
+                                        }
+                                    } catch (e) {
+                                        console.error('[appYa] Ошибка разбора JSON:', e);
+                                    }
+                                }
+                            });
+
+
+                        }
+                    }
+                }
+            }, 1000);
+        },
+        monitorAudioConstructor_OFF: function () {
+            console.log('[appYa] Мониторинг плеера запущен через setInterval');
+
+            // Настройка ИИ из /js/options.js
+            let aiSuspicion = localStorage.getItem('aYa_setting_aiSuspicion');
+
+            if (typeof appYa.previousTrackHref === 'undefined') {
+                appYa.previousTrackHref = '';
+            }
+
+            setInterval(() => {
+                const elementPlayer = document.querySelector('section[class^="PlayerBar"] a[href*="/track/"]');
+
 
                 if (elementPlayer && elementPlayer.href) {
                     const currentHref = elementPlayer.href;
@@ -118,11 +205,14 @@
                                         console.error('[appYa] Ошибка разбора JSON:', e);
                                     }
                                 }
-                            }).catch(() => {});
+                            }).catch(() => {
+                            });
 
                             appYa.renderFloatingDownloadButton(trackId);
                         }
                     }
+                } else {
+                    //Тут будем внедрятся получить ссылку на фай из HTMLMediaElement
                 }
             }, 1000);
         },
