@@ -100,12 +100,16 @@
                             appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
                                 if (cureitTrack) {
                                     localStorage.setItem('aYa_cureitTrack', cureitTrack);
-                                    console.log('[appYa] trackId', trackId);
-                                    console.log('[appYa] aiSuspicion', aiSuspicion);
+
 
                                     try {
                                         const trackData = typeof cureitTrack === 'string' ? JSON.parse(cureitTrack) : cureitTrack;
                                         const credits = trackData?.trackinfo?.credits || [];
+
+                                        appYa.renderFloatingDownloadButton(trackId);
+                                        console.log('[appYa] trackId', trackId);
+                                        console.log('[appYa] aiSuspicion', aiSuspicion);
+                                        console.log('[appYa] credits', credits.map(credit => credit.value).join(', '));
 
                                         const isAI = credits.some(item =>
                                             item.title === "Использование ИИ" ||
@@ -131,6 +135,10 @@
                                         } else if (isAI) {
                                             console.log('[appYa] Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
                                         }
+
+
+
+
                                     } catch (e) {
                                         console.error('[appYa] Ошибка разбора JSON:', e);
                                     }

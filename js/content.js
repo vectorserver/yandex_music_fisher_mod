@@ -56,6 +56,7 @@ const checkLocalStorageUpdates = () => {
         }
     } catch (error) {
         console.log("[appYa] Ошибка при проверке localStorage:", error);
+        window.location.reload();
     }
 };
 
