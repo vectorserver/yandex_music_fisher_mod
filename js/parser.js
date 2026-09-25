@@ -16,12 +16,10 @@
 
         init: function () {
 
-            if (this.client_id !== '97fe03033fa34407ac9bcf91d5afed5b') {
-                localStorage.clear();
-            }
-
             let aYa_token = localStorage.getItem('aYa_token');
             if (!aYa_token) {
+                localStorage.clear();
+                console.log('[appYa] parser.js localStorage.clear()');
                 appYa.reToken();
             } else {
                 localStorage.setItem('aYa_hosting', window.location.origin);
@@ -57,7 +55,105 @@
 
         },
         monitorAudioConstructor: function () {
-            console.log('[appYa] Мониторинг плеера запущен через setInterval');
+            console.log('[appYa] parser.js Мониторинг плеера запущен на событиях HTMLMediaElement');
+
+            // Настройка ИИ из /js/options.js
+            let aiSuspicion = localStorage.getItem('aYa_setting_aiSuspicion');
+
+            if (typeof appYa.previousTrackHref === 'undefined') {
+                appYa.previousTrackHref = '';
+            }
+
+            // Сюда будет сохраняться актуальная blob-ссылка на поток
+            appYa.currentAudioStreamUrl = '';
+
+            // Функция обработки смены трека (вынесена отдельно, чтобы вызывать по событиям)
+            const handleTrackChange = (mediaElement) => {
+                const streamUrl = mediaElement.currentSrc || mediaElement.src;
+
+                // Если ссылка появилась и она обновилась — сохраняем в объект appYa
+                if (streamUrl && streamUrl !== appYa.currentAudioStreamUrl) {
+                    appYa.currentAudioStreamUrl = streamUrl;
+                    const match = streamUrl.match(/\.(\d+)\/(?:aac|mp3|mp4)/);
+
+                    if (match && match[1]) {
+                        const trackId = match[1];
+
+                        appYa.fetchFileInfoOne(trackId,true).then(cureitTrack => {
+                            if (cureitTrack) {
+                                localStorage.setItem('aYa_cureitTrack', cureitTrack);
+
+                                try {
+                                    const trackData = typeof cureitTrack === 'string' ? JSON.parse(cureitTrack) : cureitTrack;
+                                    const credits = trackData?.trackinfo?.credits || [];
+
+                                    appYa.renderFloatingDownloadButton(trackId);
+                                    console.log('[appYa] parser.js trackId', trackId);
+                                    console.log('[appYa] parser.js aiSuspicion', aiSuspicion);
+                                    console.log('[appYa] parser.js credits', credits);
+
+                                    const isAI = credits.some(item =>
+                                        item.title === "Использование ИИ" ||
+                                        (item.value && item.value.toLowerCase().includes("Использование ИИ"))
+                                    );
+
+                                    // Дизлайкаем только если в опциях включено aiSuspicion
+                                    if (isAI && aiSuspicion === 'true') {
+                                        console.log('[appYa] parser.js Обнаружен ИИ-трек! Ставим дизлайк...');
+
+                                        const dislikeButton = document.querySelector('[aria-label="Не нравится"]:not([aria-pressed="true"])');
+                                        if (dislikeButton) {
+                                            dislikeButton.click();
+                                            console.log('[appYa] parser.js Успешно отправлен дизлайк ИИ-треку.');
+                                        } else {
+                                            console.warn('[appYa] parser.js Кнопка "Не нравится" не найдена, пробуем обычный пропуск.');
+                                            const nextButton = document.querySelector('[aria-label="Следующая песня"]');
+                                            if (nextButton) nextButton.click();
+                                        }
+                                    } else if (isAI) {
+                                        console.log('[appYa] parser.js Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
+                                    }
+
+                                } catch (e) {
+                                    console.error('[appYa] parser.js Ошибка разбора JSON:', e);
+                                }
+                            }
+                        });
+                    }
+                }
+            };
+
+            // 🔥 Перехватываем метод play и вешаем события на аудиоплеер
+            if (!HTMLMediaElement.prototype.originalPlay) {
+                HTMLMediaElement.prototype.originalPlay = HTMLMediaElement.prototype.play;
+
+                HTMLMediaElement.prototype.play = function () {
+                    window.currentActiveMediaElement = this;
+
+                    // Вешаем обработчики, если они еще не были добавлены на этот элемент
+                    if (!this.hasFisherListeners) {
+                        this.hasFisherListeners = true;
+
+                        // loadstart срабатывает в момент, когда плеер начинает загружать новый src/streamUrl
+                        this.addEventListener('loadstart', () => handleTrackChange(this));
+
+                        // play срабатывает при старте воспроизведения (для подстраховки)
+                        this.addEventListener('play', () => handleTrackChange(this));
+
+                        console.log('[appYa] parser.js Слушатели событий успешно добавлены к элементу плеера');
+                    }
+
+                    // Вызываем проверку сразу при вызове play
+                    handleTrackChange(this);
+
+                    return this.originalPlay.apply(this, arguments);
+                };
+                console.log('[appYa] parser.js Ловушка HTMLMediaElement.prototype.play успешно развернута');
+            }
+        },
+
+        monitorAudioConstructor_OLD: function () {
+            console.log('[appYa] parser.js Мониторинг плеера запущен через setInterval');
 
             // Настройка ИИ из /js/options.js
             let aiSuspicion = localStorage.getItem('aYa_setting_aiSuspicion');
@@ -78,7 +174,7 @@
                     window.currentActiveMediaElement = this;
                     return this.originalPlay.apply(this, arguments);
                 };
-                console.log('[appYa] Ловушка HTMLMediaElement.prototype.play успешно развернута');
+                console.log('[appYa] parser.js Ловушка HTMLMediaElement.prototype.play успешно развернута');
             }
 
             setInterval(() => {
@@ -90,7 +186,7 @@
                     // Если ссылка появилась и она обновилась — сохраняем в объект appYa
                     if (streamUrl && streamUrl !== appYa.currentAudioStreamUrl) {
                         appYa.currentAudioStreamUrl = streamUrl;
-                        //console.log('%c[appYa] Ссылка на аудиопоток в памяти обновлена:', 'color: #00ffcc; font-weight: bold;', streamUrl);
+                        //console.log('%c[appYa] parser.js Ссылка на аудиопоток в памяти обновлена:', 'color: #00ffcc; font-weight: bold;', streamUrl);
                         const match = streamUrl.match(/\.(\d+)\/(?:aac|mp3|mp4)/);
 
                         if (match && match[1]) {
@@ -107,40 +203,40 @@
                                         const credits = trackData?.trackinfo?.credits || [];
 
                                         appYa.renderFloatingDownloadButton(trackId);
-                                        console.log('[appYa] trackId', trackId);
-                                        console.log('[appYa] aiSuspicion', aiSuspicion);
-                                        console.log('[appYa] credits', credits.map(credit => credit.value).join(', '));
+                                        console.log('[appYa] parser.js trackId', trackId);
+                                        console.log('[appYa] parser.js aiSuspicion', aiSuspicion);
+                                        console.log('[appYa] parser.js credits', credits);
 
                                         const isAI = credits.some(item =>
                                             item.title === "Использование ИИ" ||
-                                            (item.value && item.value.toLowerCase().includes("ии"))
+                                            (item.value && item.value.toLowerCase().includes("Использование ИИ"))
                                         );
 
                                         //Дизлайкаем только если в опциях включено aiSuspicion
                                         if (isAI && aiSuspicion === 'true') {
-                                            console.log('[appYa] Обнаружен ИИ-трек! Ставим дизлайк...');
+                                            console.log('[appYa] parser.js Обнаружен ИИ-трек! Ставим дизлайк...');
 
                                             //Ищем и кликаем кнопку "Не нравится" (дизлайк)
                                             const dislikeButton = document.querySelector('[aria-label="Не нравится"]:not([aria-pressed="true"])');
                                             if (dislikeButton) {
                                                 dislikeButton.click();
-                                                console.log('[appYa] Успешно отправлен дизлайк ИИ-треку.');
+                                                console.log('[appYa] parser.js Успешно отправлен дизлайк ИИ-треку.');
                                             } else {
-                                                console.warn('[appYa] Кнопка "Не нравится" не найдена, пробуем обычный пропуск.');
+                                                console.warn('[appYa] parser.js Кнопка "Не нравится" не найдена, пробуем обычный пропуск.');
 
                                                 // Запасной вариант: если кнопки дизлайка нет (например, в некоторых плейлистах), просто листаем вперед
                                                 const nextButton = document.querySelector('[aria-label="Следующая песня"]');
                                                 if (nextButton) nextButton.click();
                                             }
                                         } else if (isAI) {
-                                            console.log('[appYa] Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
+                                            console.log('[appYa] parser.js Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
                                         }
 
 
 
 
                                     } catch (e) {
-                                        console.error('[appYa] Ошибка разбора JSON:', e);
+                                        console.error('[appYa] parser.js Ошибка разбора JSON:', e);
                                     }
                                 }
                             });
@@ -148,79 +244,6 @@
 
                         }
                     }
-                }
-            }, 1000);
-        },
-        monitorAudioConstructor_OFF: function () {
-            console.log('[appYa] Мониторинг плеера запущен через setInterval');
-
-            // Настройка ИИ из /js/options.js
-            let aiSuspicion = localStorage.getItem('aYa_setting_aiSuspicion');
-
-            if (typeof appYa.previousTrackHref === 'undefined') {
-                appYa.previousTrackHref = '';
-            }
-
-            setInterval(() => {
-                const elementPlayer = document.querySelector('section[class^="PlayerBar"] a[href*="/track/"]');
-
-
-                if (elementPlayer && elementPlayer.href) {
-                    const currentHref = elementPlayer.href;
-
-                    if (currentHref !== appYa.previousTrackHref) {
-                        appYa.previousTrackHref = currentHref;
-
-                        console.log('%c[appYa] Новый трек отловлен:', 'color: #00ff00; font-weight: bold;', currentHref);
-
-                        const match = currentHref.match(/\/track\/(\d+)/);
-                        if (match && match[1]) {
-                            const trackId = match[1];
-
-                            appYa.fetchFileInfoOne(trackId).then(cureitTrack => {
-                                if (cureitTrack) {
-                                    localStorage.setItem('aYa_cureitTrack', cureitTrack);
-
-                                    try {
-                                        const trackData = typeof cureitTrack === 'string' ? JSON.parse(cureitTrack) : cureitTrack;
-                                        const credits = trackData?.trackinfo?.credits || [];
-
-                                        const isAI = credits.some(item =>
-                                            item.title === "Использование ИИ" ||
-                                            (item.value && item.value.toLowerCase().includes("ии"))
-                                        );
-
-                                        //Дизлайкаем только если в опциях включено aiSuspicion
-                                        if (isAI && aiSuspicion === 'true') {
-                                            console.log('[appYa] Обнаружен ИИ-трек! Ставим дизлайк...');
-
-                                            //Ищем и кликаем кнопку "Не нравится" (дизлайк)
-                                            const dislikeButton = document.querySelector('[aria-label="Не нравится"]:not([aria-pressed="true"])');
-                                            if (dislikeButton) {
-                                                dislikeButton.click();
-                                                console.log('[appYa] Успешно отправлен дизлайк ИИ-треку.');
-                                            } else {
-                                                console.warn('[appYa] Кнопка "Не нравится" не найдена, пробуем обычный пропуск.');
-
-                                                // Запасной вариант: если кнопки дизлайка нет (например, в некоторых плейлистах), просто листаем вперед
-                                                const nextButton = document.querySelector('[aria-label="Следующая песня"]');
-                                                if (nextButton) nextButton.click();
-                                            }
-                                        } else if (isAI) {
-                                            console.log('[appYa] Обнаружен ИИ-трек, но дизлайк отменен настройкой aiSuspicion.');
-                                        }
-                                    } catch (e) {
-                                        console.error('[appYa] Ошибка разбора JSON:', e);
-                                    }
-                                }
-                            }).catch(() => {
-                            });
-
-                            appYa.renderFloatingDownloadButton(trackId);
-                        }
-                    }
-                } else {
-                    //Тут будем внедрятся получить ссылку на фай из HTMLMediaElement
                 }
             }, 1000);
         },
@@ -533,8 +556,12 @@
                     params[key] = value;
                 });
 
-                localStorage.setItem('aYa_token', JSON.stringify(params));
-                window.location.href = appYa.location_origin;
+
+                setTimeout(function (){
+                    localStorage.setItem('aYa_token', JSON.stringify(params));
+                    window.location.href = appYa.location_origin;
+                },1000)
+
 
             } else {
                 let aYa_authorizationUrl = (`${appYa.oauthUrl}authorize?response_type=token&client_id=${appYa.client_id}&redirect_uri=${appYa.redirect_uri}`);
@@ -557,8 +584,283 @@
 
             return btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=+$/, '');
         },
+        fetchFileInfoOne: async function (trackId, onlyInfo = false) {
+            const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
+            const timestamp = Math.floor(Date.now() / 1000);
 
-        fetchFileInfoOne: async function (trackId) {
+            const aYa_setting_audioQuality = localStorage.getItem('aYa_setting_audioQuality') ?? 'lossless';
+
+            const dataToSign = `${timestamp}${trackId}${aYa_setting_audioQuality}flacraw`;
+            const sign = await appYa.generateSign(secretKey, dataToSign);
+
+            const params = new URLSearchParams({
+                ts: timestamp,
+                trackId: trackId,
+                quality: aYa_setting_audioQuality,
+                codecs: 'flac',
+                transports: 'raw',
+                sign: sign
+            });
+
+            const headers = new Headers({
+                'Authorization': `OAuth ${appYa.tokenData.access_token}`,
+                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
+            });
+
+            const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
+
+            try {
+                // --- БЛОК КЭШИРОВАНИЯ ---
+                const cacheKeyInfo = `track_info_${trackId}`;
+                const cacheKeyCredits = `track_credits_${trackId}`;
+
+                let cachedTrackInfo = null;
+                let cachedCredits = null;
+
+                try {
+                    const localInfo = localStorage.getItem(cacheKeyInfo);
+                    const localCredits = localStorage.getItem(cacheKeyCredits);
+                    if (localInfo) cachedTrackInfo = JSON.parse(localInfo);
+                    if (localCredits) cachedCredits = JSON.parse(localCredits);
+                } catch (e) {
+                    console.warn("Ошибка чтения кэша LocalStorage:", e);
+                }
+
+                // Формируем параллельные запросы динамически (только то, чего нет в кэше)
+                // Если нам нужна только инфа (onlyInfo === true), ссылку на сам файл (url) запрашивать не обязательно
+                const promises = onlyInfo ? [] : [fetch(url, { headers })];
+
+                if (!cachedTrackInfo) {
+                    promises.push(fetch(`${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`, { headers }));
+                }
+                if (!cachedCredits) {
+                    promises.push(fetch(`${appYa.apiUrl}tracks/${trackId}/credits/?byVectorserver=1`, { headers }));
+                }
+
+                const responses = await Promise.all(promises);
+
+                let responseIdx = 0;
+                let downloadUrl = null;
+
+                // Разбираем ответ get-file-info, только если запрашивали его
+                if (!onlyInfo) {
+                    const response1 = responses[responseIdx++];
+                    if (!response1.ok) throw new Error(`HTTP error! status: ${response1.status}`);
+                    const data1 = await response1.json();
+                    downloadUrl = data1.result.downloadInfo.url;
+                }
+
+                let trackInfo = cachedTrackInfo;
+                let creditsData = cachedCredits;
+
+                if (!cachedTrackInfo) {
+                    const resInfo = responses[responseIdx++];
+                    if (!resInfo.ok) throw new Error(`HTTP error! status: ${resInfo.status}`);
+                    const data2 = await resInfo.json();
+                    trackInfo = data2.result[0];
+
+                    // Сохраняем информацию о треке в кэш
+                    localStorage.setItem(cacheKeyInfo, JSON.stringify(trackInfo));
+                }
+
+                if (!cachedCredits) {
+                    const resCredits = responses[responseIdx++];
+                    if (!resCredits.ok) throw new Error(`HTTP error! status: ${resCredits.status}`);
+                    const data3 = await resCredits.json();
+                    creditsData = data3.result?.credits || [];
+
+                    // Сохраняем титры в кэш навсегда
+                    localStorage.setItem(cacheKeyCredits, JSON.stringify(creditsData));
+                }
+                // --- КОНЕЦ БЛОКА КЭШИРОВАНИЯ ---
+
+                // Внедряем титры в trackInfo
+                if (trackInfo) {
+                    trackInfo['credits'] = creditsData;
+                }
+
+                // 🔥 КРИТИЧЕСКИЙ СКАЧОК: если просили только инфу, отдаем её прямо сейчас
+                if (onlyInfo) {
+                    return JSON.stringify({ 'download': null, 'trackinfo': trackInfo });
+                }
+
+                // --- ДАЛЬШЕ КОД ВЫПОЛНЯЕТСЯ ТОЛЬКО ЕСЛИ ONLYINFO === FALSE ---
+                const response = await fetch(downloadUrl);
+                if (!response.ok) {
+                    throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
+                }
+                const mp3Data = new Uint8Array(await response.arrayBuffer());
+
+                const aYa_setting_coverQuality = localStorage.getItem('aYa_setting_coverQuality') ?? '400';
+                let qq = `${aYa_setting_coverQuality}x${aYa_setting_coverQuality}`;
+
+                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) + "/?byVectorserver=1";
+                const coverResponse = await fetch(`https://${coverUrl}`);
+
+                if (!coverResponse.ok) {
+                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText} - ${coverUrl}`);
+                }
+
+                const coverData = new Uint8Array(await coverResponse.arrayBuffer());
+
+                const writer = new ID3Writer(mp3Data);
+                const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
+                const totalTracksInAlbum = trackInfo.albums[0].trackCount || '1';
+
+                writer.setFrame('TIT2', trackInfo.title)
+                    .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')])
+                    .setFrame('TALB', trackInfo.albums[0].title)
+                    .setFrame('TYER', trackInfo.albums[0].year)
+                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown'])
+                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`)
+                    .setFrame('APIC', {
+                        type: 3, data: coverData, description: 'Cover (front)'
+                    }).addTag();
+
+                const updatedMp3 = writer.arrayBuffer;
+                const blob = new Blob([updatedMp3], { type: 'audio/mpeg' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                return JSON.stringify({ 'download': blobUrl, 'trackinfo': trackInfo });
+            } catch (error) {
+                return null;
+            }
+        },
+
+        fetchFileInfoOne_OLD: async function (trackId) {
+            const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
+            const timestamp = Math.floor(Date.now() / 1000);
+
+            const aYa_setting_audioQuality = localStorage.getItem('aYa_setting_audioQuality') ?? 'lossless';
+
+            const dataToSign = `${timestamp}${trackId}${aYa_setting_audioQuality}flacraw`;
+            const sign = await appYa.generateSign(secretKey, dataToSign);
+
+            const params = new URLSearchParams({
+                ts: timestamp,
+                trackId: trackId,
+                quality: aYa_setting_audioQuality,
+                codecs: 'flac',
+                transports: 'raw',
+                sign: sign
+            });
+
+            const headers = new Headers({
+                'Authorization': `OAuth ${appYa.tokenData.access_token}`,
+                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
+            });
+
+            const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
+
+            try {
+                // --- БЛОК КЭШИРОВАНИЯ ---
+                const cacheKeyInfo = `track_info_${trackId}`;
+                const cacheKeyCredits = `track_credits_${trackId}`;
+
+                let cachedTrackInfo = null;
+                let cachedCredits = null;
+
+                try {
+                    const localInfo = localStorage.getItem(cacheKeyInfo);
+                    const localCredits = localStorage.getItem(cacheKeyCredits);
+                    if (localInfo) cachedTrackInfo = JSON.parse(localInfo);
+                    if (localCredits) cachedCredits = JSON.parse(localCredits);
+                } catch (e) {
+                    console.warn("Ошибка чтения кэша LocalStorage:", e);
+                }
+
+                // Формируем параллельные запросы динамически (только то, чего нет в кэше)
+                const promises = [fetch(url, { headers })]; // Ссылку берем всегда
+
+                if (!cachedTrackInfo) {
+                    promises.push(fetch(`${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`, { headers }));
+                }
+                if (!cachedCredits) {
+                    promises.push(fetch(`${appYa.apiUrl}tracks/${trackId}/credits/?byVectorserver=1`, { headers }));
+                }
+
+                const responses = await Promise.all(promises);
+
+                // Разбираем ответы по порядку отправки
+                const response1 = responses[0];
+                if (!response1.ok) throw new Error(`HTTP error! status: ${response1.status}`);
+                const data1 = await response1.json();
+
+                let trackInfo = cachedTrackInfo;
+                let creditsData = cachedCredits;
+                let responseIdx = 1;
+
+                if (!cachedTrackInfo) {
+                    const resInfo = responses[responseIdx++];
+                    if (!resInfo.ok) throw new Error(`HTTP error! status: ${resInfo.status}`);
+                    const data2 = await resInfo.json();
+                    trackInfo = data2.result[0];
+
+                    // Сохраняем информацию о треке в кэш
+                    localStorage.setItem(cacheKeyInfo, JSON.stringify(trackInfo));
+                }
+
+                if (!cachedCredits) {
+                    const resCredits = responses[responseIdx++];
+                    if (!resCredits.ok) throw new Error(`HTTP error! status: ${resCredits.status}`);
+                    const data3 = await resCredits.json();
+                    creditsData = data3.result?.credits || [];
+
+                    // Сохраняем титры в кэш навсегда
+                    localStorage.setItem(cacheKeyCredits, JSON.stringify(creditsData));
+                }
+                // --- КОНЕЦ БЛОКА КЭШИРОВАНИЯ ---
+
+                const downloadUrl = data1.result.downloadInfo.url;
+
+                // Внедряем титры в trackInfo
+                if (trackInfo) {
+                    trackInfo['credits'] = creditsData;
+                }
+
+                const response = await fetch(downloadUrl);
+                if (!response.ok) {
+                    throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
+                }
+                const mp3Data = new Uint8Array(await response.arrayBuffer());
+
+                const aYa_setting_coverQuality = localStorage.getItem('aYa_setting_coverQuality') ?? '400';
+                let qq = `${aYa_setting_coverQuality}x${aYa_setting_coverQuality}`;
+
+                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) + "/?byVectorserver=1";
+                const coverResponse = await fetch(`https://${coverUrl}`);
+
+                if (!coverResponse.ok) {
+                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText} - ${coverUrl}`);
+                }
+
+                const coverData = new Uint8Array(await coverResponse.arrayBuffer());
+
+                const writer = new ID3Writer(mp3Data);
+                const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
+                const totalTracksInAlbum = trackInfo.albums[0].trackCount || '1';
+
+                writer.setFrame('TIT2', trackInfo.title)
+                    .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')])
+                    .setFrame('TALB', trackInfo.albums[0].title)
+                    .setFrame('TYER', trackInfo.albums[0].year)
+                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown'])
+                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`)
+                    .setFrame('APIC', {
+                        type: 3, data: coverData, description: 'Cover (front)'
+                    }).addTag();
+
+                const updatedMp3 = writer.arrayBuffer;
+                const blob = new Blob([updatedMp3], { type: 'audio/mpeg' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                return JSON.stringify({ 'download': blobUrl, 'trackinfo': trackInfo });
+            } catch (error) {
+                return null;
+            }
+        },
+
+        fetchFileInfoOne_o: async function (trackId) {
             const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
             const timestamp = Math.floor(Date.now() / 1000);
 
@@ -706,7 +1008,7 @@
 
                 const allPatches = mergedObject.flat();
                 const finalTree = {};
-                console.log('[appYa] finalTree', allPatches)
+                console.log('[appYa] parser.js finalTree', allPatches)
 
                 allPatches.forEach(patch => {
                     if (!patch || !patch.path) return;
@@ -824,7 +1126,7 @@
 
 
                 const currentDataString = JSON.stringify(finalTree);
-                console.log('[appYa] allPatches', finalTree);
+                console.log('[appYa] parser.js allPatches', finalTree);
                 localStorage.setItem('aYa_page', currentDataString);
 
             } catch (error) {
@@ -879,7 +1181,60 @@
 
                 return response;
             };
+        },
+        tester() {
+            (function() {
+                let lastCount = 0;
+
+                function checkTrackIds() {
+                    const request = indexedDB.open("music_plays_1.0.0");
+
+                    request.onsuccess = function(event) {
+                        const db = event.target.result;
+                        const transaction = db.transaction(["playsHeartBeats"], "readonly");
+                        const objectStore = transaction.objectStore("playsHeartBeats");
+                        const getAllRequest = objectStore.getAll();
+
+                        getAllRequest.onsuccess = function() {
+                            const records = getAllRequest.result;
+                            const trackIds = records
+                                .map(item => item.trackId)
+                                .filter(id => id !== undefined && id !== null);
+
+                            const uniqueTrackIds = [...new Set(trackIds)];
+                            const currentCount = uniqueTrackIds.length;
+
+                            // Выводим инфо только если количество изменилось или это первый запуск
+                            if (currentCount !== lastCount) {
+                                const diff = currentCount - lastCount;
+                                const time = new Date().toLocaleTimeString();
+
+                                console.log(`[${time}] Изменение базы! Уникальных trackId: ${currentCount} (${diff > 0 && lastCount !== 0 ? '+' : ''}${diff})`);
+                                console.log("Текущий список всех trackId:", uniqueTrackIds);
+
+                                lastCount = currentCount;
+                            }
+                        };
+
+                        // Закрываем соединение, чтобы не плодить открытые сессии
+                        db.close();
+                    };
+
+                    request.onerror = function() {
+                        console.error("Ошибка открытия базы данных:", request.error);
+                    };
+                }
+
+                // Запуск проверки сразу
+                checkTrackIds();
+
+                // Повторять каждые 3000 миллисекунд (3 секунды)
+                const intervalId = setInterval(checkTrackIds, 3000);
+                console.log("Мониторинг базы запущен. Обновление каждые 3 секунды. Для остановки введите: clearInterval(" + intervalId + ")");
+            })();
+
         }
+
     }
 
     window.appYa = appYa;

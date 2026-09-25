@@ -208,16 +208,14 @@ const downloadManager = {
             }
 
 
-            // Отслеживаем завершение загрузки
-            if (settings?.app_setting.savehistory === "0" || settings?.app_setting.savehistory === 0) {
+            // Отслеживаем завершение загрузки с безопасной проверкой настроек
+            if (settings?.app_setting?.savehistory === "0" || settings?.app_setting?.savehistory === 0) {
                 chrome.downloads.onChanged.addListener(function listener(delta) {
                     if (delta.id === downloadId && delta.state && delta.state.current === 'complete') {
                         // Удаляем запись из истории загрузок
                         chrome.downloads.erase({id: downloadId}, () => {
                             if (chrome.runtime.lastError) {
-                                //console.warn("Не удалось удалить запись о загрузке:", chrome.runtime.lastError.message);
-                            } else {
-                                //console.log(`Загрузка ${downloadId} удалена из истории`);
+                                // Используем chrome.runtime.lastError без падения
                             }
                         });
                         // Отписываемся от слушателя, чтобы не ловить другие загрузки
@@ -225,7 +223,8 @@ const downloadManager = {
                     }
                 });
             }
-        });
+
+        }); 
     }
 };
 
