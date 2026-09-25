@@ -884,6 +884,17 @@
                 'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
             });
 
+            const isAllowedYandexHost = function (candidateUrl) {
+                try {
+                    const hostname = new URL(candidateUrl).hostname;
+                    return hostname === 'yandex.ru' || hostname === 'yandex.net'
+                        || hostname.endsWith('.yandex.ru') || hostname.endsWith('.yandex.net');
+                } catch (error) {
+                    console.error(error);
+                    return false;
+                }
+            };
+
             const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
             const urlInfo = `${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`;
             const urlСredits = `${appYa.apiUrl}tracks/${trackId}/credits/?byVectorserver=1`;
@@ -919,6 +930,9 @@
                     trackInfo['credits'] = data3.result.credits || [];
                 }
 
+                if (!isAllowedYandexHost(downloadUrl)) {
+                    throw new Error(`Недопустимый URL загрузки: ${downloadUrl}`);
+                }
                 const response = await fetch(downloadUrl);
                 if (!response.ok) {
                     throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
@@ -931,6 +945,9 @@
                 const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) + "/?byVectorserver=1";
                 const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq) + "/?byVectorserver=1";
 
+                if (!isAllowedYandexHost(`https://${coverUrl}`)) {
+                    throw new Error(`Недопустимый URL обложки: ${coverUrl}`);
+                }
                 const coverResponse = await fetch(`https://${coverUrl}`);
                 //const artistcoverResponse = await fetch(`https://${artistUrl}`);
 
