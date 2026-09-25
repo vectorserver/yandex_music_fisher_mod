@@ -294,7 +294,8 @@ const uiUpdater = {
                     // Формируем массив согласно выбранному диапазону
                     const idsToDownload = trackIds.slice(startIdx, endIdx);
 
-                    eventHandlers.downloadTracks(aYa_tabID, idsToDownload, `playlist/${title}`);
+                    // startNumber — позиция в исходном плейлисте (для корректной нумерации файлов)
+                    eventHandlers.downloadTracks(aYa_tabID, idsToDownload, `playlist/${title}`, startIdx + 1);
                 };
 
 
@@ -360,12 +361,13 @@ const eventHandlers = {
         });
     },
 
-    downloadTracks(tabId, trackIds, playlistName) {
+    downloadTracks(tabId, trackIds, playlistName, startNumber = 1) {
         chrome.runtime.sendMessage({
             action: "download_Tracks",
             tabId: tabId,
             trackIds: trackIds,
-            playlistName: playlistName
+            playlistName: playlistName,
+            startNumber: startNumber
         }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error("Ошибка отправки данных в service_worker.js:", chrome.runtime.lastError.message);
