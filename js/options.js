@@ -10,12 +10,38 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Добавляем DOM-элемент для нового чекбокса ИИ
     const aiCheckbox = document.getElementById('aiSuspicion');
 
+    const variableButtons = document.querySelectorAll('.btn-variable');
+    const btnsContainer = document.querySelector('.path-helper-btns');
+
     // Функция для скрытия/показа текста
     const updateExample = () => {
         if (numberingCheckbox.checked) {
             trackExample.textContent = '01. music_name.mp3';
         } else {
             trackExample.textContent = 'music_name.mp3';
+        }
+    };
+
+    // Функция обновления подсветки и затухания кнопок
+    const updateButtonStates = () => {
+        const currentVal = folderInput.value;
+        let hasActive = false;
+
+        variableButtons.forEach(button => {
+            const variable = button.getAttribute('data-var');
+            if (currentVal.includes(variable)) {
+                button.classList.add('active');
+                hasActive = true;
+            } else {
+                button.classList.remove('active');
+            }
+        });
+
+        // Если хотя бы одна кнопка активна — активируем режим затухания для остальных
+        if (hasActive && btnsContainer) {
+            btnsContainer.classList.add('has-active');
+        } else if (btnsContainer) {
+            btnsContainer.classList.remove('has-active');
         }
     };
 
@@ -34,6 +60,40 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
         updateExample();
     }
+
+    // Первичный расчет состояния кнопок после загрузки сохраненного пути
+    updateButtonStates();
+
+    // Обработка кликов по кнопкам быстрого выбора пути
+    variableButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const variable = this.getAttribute('data-var');
+            let currentVal = folderInput.value;
+
+            // Проверяем, содержит ли уже инпут эту переменную
+            if (currentVal.includes(variable)) {
+                folderInput.focus();
+                return;
+            }
+
+            // Если в поле что-то есть и оно не заканчивается на слэш, добавляем его перед новой переменной
+            if (currentVal && !currentVal.endsWith('/')) {
+                currentVal += '/';
+            }
+
+            // Дописываем тег переменной и закрывающий слэш
+            folderInput.value = currentVal + variable + '/';
+
+            // Синхронизируем подсветку кнопок
+            updateButtonStates();
+
+            // Возвращаем фокус на поле ввода папки
+            folderInput.focus();
+        });
+    });
+
+    // Отслеживаем ручное изменение пути (если пользователь сотрет тег бэкспейсом)
+    folderInput.addEventListener('input', updateButtonStates);
 
     // Слушатель клика по галке
     numberingCheckbox.addEventListener('change', updateExample);

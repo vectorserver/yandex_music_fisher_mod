@@ -97,48 +97,50 @@ const downloadManager = {
                                 badgeManager.updateBadge(globalCount, bg);
 
                                 if (inputData !== null && inputData.download) {
+                                    // Переменная для итоговой папки (по умолчанию имя плейлиста)
+                                    let currentTrackFolder = playlistName;
 
-
-                                    // Если есть переменные в downloadFolder, обрабатываем их
                                     if (hasVariables) {
+                                        // Все артисты через запятую
                                         let artists = inputData.trackinfo.artists.map((item) => item.name).join(', ');
+                                        // Только первый (основной) артист
+                                        let firstArtist = inputData.trackinfo.artists[0]?.name || 'Unknown Artist';
 
-                                        // Если есть переменные в downloadFolder, обрабатываем их
                                         const defaultTrackInfo = {
                                             dir: playlistName,
-                                            genre: inputData.trackinfo.albums[0].genre || 'Unknown',
-                                            year: inputData.trackinfo.albums[0].year || new Date().getFullYear(),
+                                            genre: inputData.trackinfo.albums[0]?.genre || 'Unknown',
+                                            year: inputData.trackinfo.albums[0]?.year || new Date().getFullYear(),
                                             artist: artists || 'Unknown Artist',
-                                            album: inputData.trackinfo.albums[0].title || 'Unknown Album'
+                                            firstArtist: firstArtist,
+                                            album: inputData.trackinfo.albums[0]?.title || 'Unknown Album'
                                         };
 
-                                        // Словарь переменных
+                                        // Словарь переменных (добавлена %first_artist%)
                                         const variables = {
                                             '%dir%': playlistName,
                                             '%genre%': defaultTrackInfo.genre,
                                             '%year%': defaultTrackInfo.year.toString(),
                                             '%artist%': defaultTrackInfo.artist,
+                                            '%first_artist%': defaultTrackInfo.firstArtist,
                                             '%album%': defaultTrackInfo.album
                                         };
 
-                                        // Заменяем переменные в downloadFolder
+                                        // Заменяем переменные в шаблоне downloadFolder
                                         let processedFolder = downloadFolder;
 
                                         for (const [variable, value] of Object.entries(variables)) {
                                             if (downloadFolder.includes(variable)) {
-                                                // Очищаем значение от недопустимых символов
+                                                // Очищаем значение от недопустимых в путях символов
                                                 const cleanValue = value.toString().replace(/[<>:"/\\|?*]/g, '_');
                                                 processedFolder = processedFolder.replace(new RegExp(variable.replace(/%/g, '\\%'), 'gi'), cleanValue);
                                             }
                                         }
 
-                                        playlistName = processedFolder;
-
-
+                                        currentTrackFolder = processedFolder;
                                     }
 
-
-                                    downloadManager.downloadFile(inputData, playlistName, settings);
+                                    // Передаем правильную папку конкретно для этого трека
+                                    downloadManager.downloadFile(inputData, currentTrackFolder, settings);
                                 }
                                 resolve(trackId);
                             } else {
@@ -149,6 +151,7 @@ const downloadManager = {
                 })
             ));
         }
+
 
         function sanitizeFilename(text) {
             if (!text) return 'unnamed';
@@ -224,7 +227,7 @@ const downloadManager = {
                 });
             }
 
-        }); 
+        });
     }
 };
 

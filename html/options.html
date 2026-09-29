@@ -135,19 +135,51 @@
             box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
         }
 
-        /* Ченджлог (История изменений) */
-        pre {
-            background: #131316;
-            color: #a8a8b3;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            border: 1px solid #232329;
-            max-height: 220px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            line-height: 1.5;
+        /* Кнопки вставки переменных под инпутом */
+        .path-helper-btns {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
         }
+
+        .btn-variable {
+            background-color: #202024;
+            border: 1px solid #2e2e35;
+            color: #ffcc00; /* Стали желтыми */
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            opacity: 0.8; /* Исходное состояние слегка приглушено */
+        }
+
+        .btn-variable:hover {
+            border-color: #ffcc00;
+            background-color: rgba(255, 204, 0, 0.05);
+            opacity: 1;
+        }
+
+        /* Класс для выбранной (активной) переменной */
+        .btn-variable.active {
+            background-color: rgba(255, 204, 0, 0.15) !important;
+            border-color: #ffcc00 !important;
+            color: #ffffff !important; /* Текст становится белым и ярким */
+            opacity: 1 !important;
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
+        }
+
+        /* Класс для остальных кнопок, когда есть активная */
+        .path-helper-btns.has-active .btn-variable:not(.active) {
+            opacity: 0.4; /* Затухшие кнопки */
+        }
+
+        .path-helper-btns.has-active .btn-variable:not(.active):hover {
+            opacity: 0.7; /* Чуть ярче при наведении, но все равно затухшие */
+        }
+
     </style>
 </head>
 <body>
@@ -198,13 +230,28 @@
             <input required class="form-control" value="music/" type="text" id="downloadFolder"
                    placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/>
 
-            <div class="variables-highlight" style="font-size: 11px; margin-top: 6px; line-height: 1.6;">
-                <code>Переменные:</code><br>
-                <code>%genre%</code> — Жанр |
-                <code>%year%</code> — Год |
-                <code>%artist%</code> — Артист |
-                <code>%album%</code> — Альбом <br>
-                <span style="color: #797984;">Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту.</span>
+            <!-- Кнопки выбора пути под полем ввода -->
+            <div class="path-helper-btns">
+                <button type="button" class="btn-variable" data-var="%genre%">+ Жанр</button>
+                <button type="button" class="btn-variable" data-var="%year%">+ Год</button>
+                <button type="button" class="btn-variable" data-var="%artist%">+ Артист</button>
+                <button type="button" class="btn-variable" data-var="%first_artist%">+ Первый артист</button>
+                <button type="button" class="btn-variable" data-var="%album%">+ Альбом</button>
+            </div>
+
+            <!-- Развернутые мини-описания к переменным -->
+            <div class="variables-highlight" style="font-size: 11px; margin-top: 12px; line-height: 1.6;">
+                <code style="font-weight: bold; color: #ffffff !important;">Переменные для путей:</code>
+                <div style="margin-top: 4px; padding-left: 4px;">
+                    <code>%genre%</code> — Основной жанр релиза (например: Pop, Rock, Rap).<br>
+                    <code>%year%</code> — Год официального выпуска альбома или сингла.<br>
+                    <code>%artist%</code> — Полный список всех исполнителей трека через запятую.<br>
+                    <code>%first_artist%</code> — Имя только самого первого (главного) артиста.<br>
+                    <code>%album%</code> — Официальное название альбома, микстейпа или EP.
+                </div>
+                <div style="color: #797984; margin-top: 6px; font-style: italic;">
+                    * Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту.
+                </div>
             </div>
         </div>
 
@@ -213,11 +260,14 @@
             <label class="form-check-label" for="numberingTracks">
                 Нумеровать имена треков
             </label>
-            <br>
-            <code id="trackExample" class="music_nuber_name" style="font-size: 11px;">
+            <div style="font-size: 11px; color: #ffcc00; margin-top: 2px; opacity: 0.85;">
+                ⚠️ Внимание: работает только при скачивании альбомов (согласно порядку треков в релизе).
+            </div>
+            <code id="trackExample" class="music_nuber_name" style="font-size: 11px; margin-top: 6px;">
                 music_name.mp3
             </code>
         </div>
+
 
         <div class="mb-4">
             <label for="savehistory">Сохранять историю в менеджере загрузок:</label>
@@ -242,29 +292,9 @@
     </form>
 
     <hr>
-
-    <pre>
-
-#2.1.45
-    - Адаптация под новый DOM плеера: Успешно обошли удаление тега audio и динамическую смену классов PlayerBar со стороны Яндекса.
-    - Заменили привязку к CSS-классам на фоновый мониторинг ссылки a[href*="/track/"] через оптимизированный setInterval.
-    - При обнаружении ИИ-трека скрипт автоматически жмет кнопку «Не нравится» (aria-label="Не нравится"), позволяя алгоритмам Яндекса мгновенно переключить песню.
-    - Добавлен фильтр :not([aria-pressed="true"]), который блокирует повторный клик по кнопке, если дизлайк уже был поставлен ранее.Интеграция
-    - Добавлена проверка флага aiSuspicion из локального хранилища. Дизлайк сработает только в том случае, если функция активирована пользователем в настройках.
-#2.1.43
-    - content.js Удалена проверка chrome.runtime, причина: блокировала обновление при перезапуске расширения.
-#2.1.41
-    - Исправлен баг - Обновите страницу Яндекс Музыки, потом вернитесь сюда)
-    - Первичный запрос данных при открытии popup
-    - Постоянный мониторинг изменений (на одном уровне, а не внутри колбэка)
-    - Обнвлен monitorAudioConstructor
-
-#2.1.36
-    - Исправление сетевой ошибки CSP (https://undefined): Устранен баг со скачиванием постеров, из-за которого в fetch передавалась неверная переменная, вызывая блокировку запроса политикой безопасности Яндекса.
-    - Кнопка скачивания теперь перетаскивается в любое удобное место и запоминает свое положение.
- </pre>
 </div>
 
+<!-- Подключение внешнего JS файла -->
 <script src="../js/options.js" defer></script>
 </body>
 </html>
