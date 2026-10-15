@@ -13,6 +13,9 @@
         previousTrackHref: null,
         previousTitleContainer: null,
         tokenData: {},
+        dbName: 'YandexMusicFisherCacheDB',
+        dbVersion: 2,
+        dbInstance: null,
 
         init: function () {
 
@@ -53,6 +56,70 @@
             }
 
 
+        },
+        initDB: function () {
+            return new Promise((resolve, reject) => {
+                if (appYa.dbInstance) return resolve(appYa.dbInstance);
+
+                const request = indexedDB.open(appYa.dbName, appYa.dbVersion);
+
+                request.onerror = (event) => {
+                    console.warn('[appYa] Ошибка открытия IndexedDB:', event.target.error);
+                    resolve(null);
+                };
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('tracks')) {
+                        db.createObjectStore('tracks');
+                    }
+                    if (!db.objectStoreNames.contains('credits')) {
+                        db.createObjectStore('credits');
+                    }
+                    if (!db.objectStoreNames.contains('page')) {
+                        db.createObjectStore('page');
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    appYa.dbInstance = event.target.result;
+                    resolve(appYa.dbInstance);
+                };
+            });
+        },
+
+        // Получить из кэша
+        getDBItem: async function (storeName, key) {
+            const db = await appYa.initDB();
+            if (!db) return null;
+            return new Promise((resolve) => {
+                try {
+                    const transaction = db.transaction(storeName, 'readonly');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.get(key);
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => resolve(null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        },
+
+        // Сохранить в кэш
+        setDBItem: async function (storeName, key, value) {
+            const db = await appYa.initDB();
+            if (!db) return;
+            return new Promise((resolve) => {
+                try {
+                    const transaction = db.transaction(storeName, 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    store.put(value, key);
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                } catch (e) {
+                    resolve(false);
+                }
+            });
         },
         monitorAudioConstructor: function () {
             console.log('[appYa] parser.js Мониторинг плеера запущен на событиях HTMLMediaElement');
@@ -610,24 +677,11 @@
             const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
 
             try {
-                // --- БЛОК КЭШИРОВАНИЯ ---
-                const cacheKeyInfo = `track_info_${trackId}`;
-                const cacheKeyCredits = `track_credits_${trackId}`;
-
-                let cachedTrackInfo = null;
-                let cachedCredits = null;
-
-                try {
-                    const localInfo = localStorage.getItem(cacheKeyInfo);
-                    const localCredits = localStorage.getItem(cacheKeyCredits);
-                    if (localInfo) cachedTrackInfo = JSON.parse(localInfo);
-                    if (localCredits) cachedCredits = JSON.parse(localCredits);
-                } catch (e) {
-                    console.warn("Ошибка чтения кэша LocalStorage:", e);
-                }
+                // --- БЛОК КЭШИРОВАНИЯ INDEXEDDB ---
+                let cachedTrackInfo = await appYa.getDBItem('tracks', trackId);
+                let cachedCredits = await appYa.getDBItem('credits', trackId);
 
                 // Формируем параллельные запросы динамически (только то, чего нет в кэше)
-                // Если нам нужна только инфа (onlyInfo === true), ссылку на сам файл (url) запрашивать не обязательно
                 const promises = onlyInfo ? [] : [fetch(url, { headers })];
 
                 if (!cachedTrackInfo) {
@@ -642,7 +696,6 @@
                 let responseIdx = 0;
                 let downloadUrl = null;
 
-                // Разбираем ответ get-file-info, только если запрашивали его
                 if (!onlyInfo) {
                     const response1 = responses[responseIdx++];
                     if (!response1.ok) throw new Error(`HTTP error! status: ${response1.status}`);
@@ -659,8 +712,8 @@
                     const data2 = await resInfo.json();
                     trackInfo = data2.result[0];
 
-                    // Сохраняем информацию о треке в кэш
-                    localStorage.setItem(cacheKeyInfo, JSON.stringify(trackInfo));
+                    // Сохраняем информацию в IndexedDB
+                    await appYa.setDBItem('tracks', trackId, trackInfo);
                 }
 
                 if (!cachedCredits) {
@@ -669,8 +722,8 @@
                     const data3 = await resCredits.json();
                     creditsData = data3.result?.credits || [];
 
-                    // Сохраняем титры в кэш навсегда
-                    localStorage.setItem(cacheKeyCredits, JSON.stringify(creditsData));
+                    // Сохраняем титры в IndexedDB
+                    await appYa.setDBItem('credits', trackId, creditsData);
                 }
                 // --- КОНЕЦ БЛОКА КЭШИРОВАНИЯ ---
 
@@ -679,12 +732,10 @@
                     trackInfo['credits'] = creditsData;
                 }
 
-                // 🔥 КРИТИЧЕСКИЙ СКАЧОК: если просили только инфу, отдаем её прямо сейчас
                 if (onlyInfo) {
                     return JSON.stringify({ 'download': null, 'trackinfo': trackInfo });
                 }
 
-                // --- ДАЛЬШЕ КОД ВЫПОЛНЯЕТСЯ ТОЛЬКО ЕСЛИ ONLYINFO === FALSE ---
                 const response = await fetch(downloadUrl);
                 if (!response.ok) {
                     throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
@@ -727,319 +778,6 @@
             }
         },
 
-        fetchFileInfoOne_OLD: async function (trackId) {
-            const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
-            const timestamp = Math.floor(Date.now() / 1000);
-
-            const aYa_setting_audioQuality = localStorage.getItem('aYa_setting_audioQuality') ?? 'lossless';
-
-            const dataToSign = `${timestamp}${trackId}${aYa_setting_audioQuality}flacraw`;
-            const sign = await appYa.generateSign(secretKey, dataToSign);
-
-            const params = new URLSearchParams({
-                ts: timestamp,
-                trackId: trackId,
-                quality: aYa_setting_audioQuality,
-                codecs: 'flac',
-                transports: 'raw',
-                sign: sign
-            });
-
-            const headers = new Headers({
-                'Authorization': `OAuth ${appYa.tokenData.access_token}`,
-                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
-            });
-
-            const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
-
-            try {
-                // --- БЛОК КЭШИРОВАНИЯ ---
-                const cacheKeyInfo = `track_info_${trackId}`;
-                const cacheKeyCredits = `track_credits_${trackId}`;
-
-                let cachedTrackInfo = null;
-                let cachedCredits = null;
-
-                try {
-                    const localInfo = localStorage.getItem(cacheKeyInfo);
-                    const localCredits = localStorage.getItem(cacheKeyCredits);
-                    if (localInfo) cachedTrackInfo = JSON.parse(localInfo);
-                    if (localCredits) cachedCredits = JSON.parse(localCredits);
-                } catch (e) {
-                    console.warn("Ошибка чтения кэша LocalStorage:", e);
-                }
-
-                // Формируем параллельные запросы динамически (только то, чего нет в кэше)
-                const promises = [fetch(url, { headers })]; // Ссылку берем всегда
-
-                if (!cachedTrackInfo) {
-                    promises.push(fetch(`${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`, { headers }));
-                }
-                if (!cachedCredits) {
-                    promises.push(fetch(`${appYa.apiUrl}tracks/${trackId}/credits/?byVectorserver=1`, { headers }));
-                }
-
-                const responses = await Promise.all(promises);
-
-                // Разбираем ответы по порядку отправки
-                const response1 = responses[0];
-                if (!response1.ok) throw new Error(`HTTP error! status: ${response1.status}`);
-                const data1 = await response1.json();
-
-                let trackInfo = cachedTrackInfo;
-                let creditsData = cachedCredits;
-                let responseIdx = 1;
-
-                if (!cachedTrackInfo) {
-                    const resInfo = responses[responseIdx++];
-                    if (!resInfo.ok) throw new Error(`HTTP error! status: ${resInfo.status}`);
-                    const data2 = await resInfo.json();
-                    trackInfo = data2.result[0];
-
-                    // Сохраняем информацию о треке в кэш
-                    localStorage.setItem(cacheKeyInfo, JSON.stringify(trackInfo));
-                }
-
-                if (!cachedCredits) {
-                    const resCredits = responses[responseIdx++];
-                    if (!resCredits.ok) throw new Error(`HTTP error! status: ${resCredits.status}`);
-                    const data3 = await resCredits.json();
-                    creditsData = data3.result?.credits || [];
-
-                    // Сохраняем титры в кэш навсегда
-                    localStorage.setItem(cacheKeyCredits, JSON.stringify(creditsData));
-                }
-                // --- КОНЕЦ БЛОКА КЭШИРОВАНИЯ ---
-
-                const downloadUrl = data1.result.downloadInfo.url;
-
-                // Внедряем титры в trackInfo
-                if (trackInfo) {
-                    trackInfo['credits'] = creditsData;
-                }
-
-                const response = await fetch(downloadUrl);
-                if (!response.ok) {
-                    throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
-                }
-                const mp3Data = new Uint8Array(await response.arrayBuffer());
-
-                const aYa_setting_coverQuality = localStorage.getItem('aYa_setting_coverQuality') ?? '400';
-                let qq = `${aYa_setting_coverQuality}x${aYa_setting_coverQuality}`;
-
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) + "/?byVectorserver=1";
-                const coverResponse = await fetch(`https://${coverUrl}`);
-
-                if (!coverResponse.ok) {
-                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText} - ${coverUrl}`);
-                }
-
-                const coverData = new Uint8Array(await coverResponse.arrayBuffer());
-
-                const writer = new ID3Writer(mp3Data);
-                const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
-                const totalTracksInAlbum = trackInfo.albums[0].trackCount || '1';
-
-                writer.setFrame('TIT2', trackInfo.title)
-                    .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')])
-                    .setFrame('TALB', trackInfo.albums[0].title)
-                    .setFrame('TYER', trackInfo.albums[0].year)
-                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown'])
-                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`)
-                    .setFrame('APIC', {
-                        type: 3, data: coverData, description: 'Cover (front)'
-                    }).addTag();
-
-                const updatedMp3 = writer.arrayBuffer;
-                const blob = new Blob([updatedMp3], { type: 'audio/mpeg' });
-                const blobUrl = URL.createObjectURL(blob);
-
-                return JSON.stringify({ 'download': blobUrl, 'trackinfo': trackInfo });
-            } catch (error) {
-                return null;
-            }
-        },
-
-        fetchFileInfoOne_o: async function (trackId) {
-            const secretKey = 'kzqU4XhfCaY6B6JTHODeq5';
-            const timestamp = Math.floor(Date.now() / 1000);
-
-            const aYa_setting_audioQuality = localStorage.getItem('aYa_setting_audioQuality') ?? 'lossless';
-
-            const dataToSign = `${timestamp}${trackId}${aYa_setting_audioQuality}flacraw`;
-
-            const sign = await appYa.generateSign(secretKey, dataToSign);
-
-            const params = new URLSearchParams({
-                ts: timestamp,
-                trackId: trackId,
-                quality: aYa_setting_audioQuality,
-                codecs: 'flac',
-                transports: 'raw',
-                sign: sign
-            });
-
-            const headers = new Headers({
-                'Authorization': `OAuth ${appYa.tokenData.access_token}`,
-                'X-Yandex-Music-Client': 'YandexMusicDesktopAppWindows/2'
-            });
-
-            const url = `${appYa.apiUrl}get-file-info?${params.toString()}&byVectorserver=1`;
-            const urlInfo = `${appYa.apiUrl}tracks?trackIds=${trackId}&byVectorserver=1`;
-            const urlСredits = `${appYa.apiUrl}tracks/${trackId}/credits/?byVectorserver=1`;
-
-            try {
-                const [
-                    response1,
-                    response2,
-                    response3
-                ] = await Promise.all([
-                    fetch(url, {headers}),
-                    fetch(urlInfo, {headers}),
-                    fetch(urlСredits, {headers}),
-                ]);
-
-                if (!response1.ok) {
-                    throw new Error(`HTTP error! status: ${response1.status}`);
-                }
-                if (!response2.ok) {
-                    throw new Error(`HTTP error! status: ${response2.status}`);
-                }
-                if (!response3.ok) {
-                    throw new Error(`HTTP error! status: ${response2.status}`);
-                }
-
-                const data1 = await response1.json();
-                const data2 = await response2.json();
-                const data3 = await response3.json();
-
-                const downloadUrl = data1.result.downloadInfo.url;
-                const trackInfo = data2.result[0];
-                if (data3) {
-                    trackInfo['credits'] = data3.result.credits || [];
-                }
-
-                const response = await fetch(downloadUrl);
-                if (!response.ok) {
-                    throw new Error(`Ошибка загрузки MP3: ${response.statusText}`);
-                }
-                const mp3Data = new Uint8Array(await response.arrayBuffer());
-
-                const aYa_setting_coverQuality = localStorage.getItem('aYa_setting_coverQuality') ?? '400';
-                let qq = `${aYa_setting_coverQuality}x${aYa_setting_coverQuality}`
-
-                const coverUrl = trackInfo.albums[0].coverUri.replace('%%', qq) + "/?byVectorserver=1";
-                const artistUrl = trackInfo.artists[0].cover?.uri?.replace('%%', qq) + "/?byVectorserver=1";
-
-                const coverResponse = await fetch(`https://${coverUrl}`);
-                //const artistcoverResponse = await fetch(`https://${artistUrl}`);
-
-                if (!coverResponse.ok) {
-                    throw new Error(`Ошибка загрузки обложки: ${coverResponse.statusText} - ${coverUrl}`);
-                }
-
-                const coverData = new Uint8Array(await coverResponse.arrayBuffer());
-                //const artistcoverResponseData = new Uint8Array(await artistcoverResponse.arrayBuffer());
-
-                const writer = new ID3Writer(mp3Data);
-                const currentTrackNumber = trackInfo.albums[0].trackPosition.index || '1';
-                const totalTracksInAlbum = trackInfo.albums[0].trackCount || '1';
-
-                writer.setFrame('TIT2', trackInfo.title)
-                    .setFrame('TPE1', [trackInfo.artists.map(a => a.name).join(', ')])
-                    .setFrame('TALB', trackInfo.albums[0].title)
-                    .setFrame('TYER', trackInfo.albums[0].year)
-                    .setFrame('TCON', trackInfo.albums[0]?.genre?.split(',') || ['Unknown'])
-                    .setFrame('TRCK', `${currentTrackNumber}/${totalTracksInAlbum}`)
-                    .setFrame('APIC', {
-                        type: 3, data: coverData, description: 'Cover (front)'
-                    }).addTag();
-                /*.setFrame('APIC', {
-                    type: 17, data: artistcoverResponseData, description: 'Band Logo'
-                })*/
-
-
-                const updatedMp3 = writer.arrayBuffer;
-                const blob = new Blob([updatedMp3], {type: 'audio/mpeg'});
-
-                const blobUrl = URL.createObjectURL(blob);
-
-                const allData = JSON.stringify({'download': blobUrl, 'trackinfo': trackInfo});
-                return allData;
-            } catch (error) {
-                //console.error('Error fetching file info:', error);
-                return null;
-            }
-        },
-
-        parsePage_O: async function () {
-            try {
-                let url = window.location.href;
-                if (url.includes('/artist') && !url.endsWith('/tracks')) {
-                    url = `${url}/tracks`;
-                }
-
-                const response = await fetch(url);
-
-                if (!response.ok) return;
-
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const scriptElements = doc.querySelectorAll("body > script");
-
-                const pushRegex = /\(window\.__STATE_PATCHES__\s*=\s*window\.__STATE_PATCHES__\s*\|\|\s*\[\]\)\.push\(([\s\S]*?)\);/g;
-                const mergedObject = [];
-
-                scriptElements.forEach((script) => {
-                    const content = script.textContent;
-                    const matches = content.matchAll(pushRegex);
-
-                    for (const match of matches) {
-                        const pushData = match[1];
-                        try {
-                            const parsedData = new Function(`return ${pushData};`)();
-                            mergedObject.push(parsedData);
-                        } catch (e) {
-                            // Silent catch
-                        }
-                    }
-                });
-
-                const allPatches = mergedObject.flat();
-                const finalTree = {};
-                console.log('[appYa] parser.js finalTree', allPatches)
-
-                allPatches.forEach(patch => {
-                    if (!patch || !patch.path) return;
-
-                    const keys = patch.path.split('/').filter(Boolean);
-                    let current = finalTree;
-
-
-                    for (let i = 0; i < keys.length - 1; i++) {
-                        const key = keys[i];
-                        if (!current[key]) {
-                            current[key] = {};
-                        }
-                        current = current[key];
-                    }
-
-                    const lastKey = keys[keys.length - 1];
-                    if (lastKey !== undefined) {
-                        current[lastKey] = patch.value;
-                    }
-                });
-
-
-                localStorage.removeItem('aYa_page');
-                const currentDataString = JSON.stringify(finalTree);
-                localStorage.setItem('aYa_page', currentDataString);
-
-            } catch (error) {
-                // Silent catch
-            }
-        },
         parsePage: async function () {
             try {
                 let url = window.location.href;
@@ -1129,8 +867,11 @@
                 console.log('[appYa] parser.js allPatches', finalTree);
                 localStorage.setItem('aYa_page', currentDataString);
 
+                await appYa.setDBItem('page', 'aYa_page', currentDataString);
+
+
             } catch (error) {
-                // Silent catch
+                console.error('[appYa] Ошибка сохранения страницы в IndexedDB:', error);
             }
         },
 
