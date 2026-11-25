@@ -2,235 +2,206 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>NEXT Yandex Music Fisher</title>
-    <!-- Bootstrap CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Настройки — Yandex Music Fisher mod by vectorserver</title>
+    <!-- Yandex Music Fisher mod by vectorserver -->
     <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Современная темная тема в едином стиле с popup */
+        :root {
+            --bg: #121214;
+            --panel: #18181c;
+            --card: #202024;
+            --line: #2e2e35;
+            --text: #e1e1e6;
+            --muted: #a8a8b3;
+            --accent: #ffcc00;
+            --green: #00eb84;
+            --red: #ff5252;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            background-color: #121214;
-            color: #e1e1e6;
+            background: var(--bg);
+            color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 20px 0;
+            padding: 24px 0;
             margin: 0;
         }
 
         .container {
-            max-width: 600px;
-            background: #18181c;
+            max-width: 640px;
+            background: var(--panel);
             border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            padding: 26px;
             border: 1px solid #29292e;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
         }
 
-        h1 {
-            color: #ffffff;
-            font-size: 1.8rem;
+        h1 { color: #fff; font-size: 1.7rem; font-weight: 700; margin: 0 0 4px; }
+        .subtitle { color: var(--muted); font-size: .85rem; margin-bottom: 18px; }
+
+        hr { border-color: var(--line); opacity: 1; margin: 18px 0; }
+
+        p { font-size: .95rem; color: var(--muted); }
+        a { color: var(--accent); text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+
+        label.field-label {
+            font-size: .9rem;
             font-weight: 600;
-            margin-bottom: 15px;
-        }
-
-        hr {
-            border-color: #2e2e35;
-            opacity: 1;
-            margin: 15px 0;
-        }
-
-        p {
-            font-size: 0.95rem;
-            color: #a8a8b3;
-        }
-
-        /* Стилизация ссылок */
-        a {
-            color: #ffcc00;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        /* Элементы форм (Селекты и Инпуты) */
-        label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #ffffff;
+            color: #fff;
             margin-bottom: 6px;
             display: block;
         }
 
+        .hint {
+            font-size: .75rem;
+            color: #797984;
+            margin-top: 4px;
+            display: block;
+        }
+
         .form-select, .form-control {
-            background-color: #202024 !important;
-            border: 1px solid #2e2e35 !important;
-            color: #ffffff !important;
+            background-color: var(--card) !important;
+            border: 1px solid var(--line) !important;
+            color: #fff !important;
             border-radius: 8px;
-            font-size: 0.95rem;
-            padding: 8px 12px;
+            font-size: .92rem;
         }
 
         .form-select:focus, .form-control:focus {
-            border-color: #ffcc00 !important;
-            box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.2) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 204, 0, .2) !important;
         }
 
-        /* Кастомный чекбокс-переключатель (Switch) */
-        .form-check-input {
-            background-color: #202024 !important;
-            border-color: #2e2e35 !important;
-            cursor: pointer;
-        }
+        .form-check-input { background-color: var(--card) !important; border-color: var(--line) !important; cursor: pointer; }
+        .form-check-input:checked { background-color: var(--accent) !important; border-color: var(--accent) !important; }
+        .form-check-label { cursor: pointer; }
 
-        .form-check-input:checked {
-            background-color: #ffcc00 !important;
-            border-color: #ffcc00 !important;
-        }
-
-        .form-check-label {
-            cursor: pointer;
-            padding-left: 4px;
-        }
-
-        /* Подсказки и переменные */
         code {
             color: #8a8a93 !important;
             font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, .03);
             padding: 2px 4px;
             border-radius: 4px;
         }
 
-        /* Выделение переменных фиолетовым неоном */
-        .variables-highlight code {
-            color: #bf5af2 !important;
-            background: rgba(191, 90, 242, 0.1);
-            font-weight: 600;
-        }
+        .variables-highlight code { color: #bf5af2 !important; background: rgba(191, 90, 242, .1); font-weight: 600; }
 
-        #trackExample {
-            color: #00eb84 !important;
-            background: rgba(0, 235, 132, 0.1);
-            display: inline-block;
-            margin-top: 5px;
-        }
+        #trackExample { color: var(--green) !important; background: rgba(0, 235, 132, .1); display: inline-block; margin-top: 5px; }
 
-        /* Кнопка сохранения */
-        .btn-dark {
-            background-color: #ffcc00 !important;
-            border-color: #ffcc00 !important;
-            color: #121214 !important;
-            font-weight: 600;
+        .btn-main {
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            color: #121214;
+            font-weight: 700;
             border-radius: 8px;
             padding: 10px 24px;
             font-size: 1rem;
-            transition: all 0.2s;
             width: 100%;
-            margin-top: 10px;
-        }
-
-        .btn-dark:hover {
-            background-color: #e6b800 !important;
-            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
-        }
-
-        /* Кнопки вставки переменных под инпутом */
-        .path-helper-btns {
             margin-top: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+            cursor: pointer;
         }
+
+        .btn-main:hover { background: #e6b800; }
+
+        .btn-danger-soft {
+            background: rgba(255, 82, 82, .1);
+            border: 1px solid rgba(255, 82, 82, .35);
+            color: #ff7b7b;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: .82rem;
+            cursor: pointer;
+        }
+
+        .btn-danger-soft:hover { background: rgba(255, 82, 82, .2); }
+
+        .btn-ghost {
+            background: var(--card);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: .82rem;
+            cursor: pointer;
+        }
+
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+        .path-helper-btns { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
 
         .btn-variable {
-            background-color: #202024;
-            border: 1px solid #2e2e35;
-            color: #ffcc00; /* Стали желтыми */
-            font-size: 0.8rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            color: var(--accent);
+            font-size: .8rem;
             font-weight: 600;
             padding: 4px 10px;
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            opacity: 0.8; /* Исходное состояние слегка приглушено */
+            opacity: .8;
+            transition: all .2s;
         }
 
-        .btn-variable:hover {
-            border-color: #ffcc00;
-            background-color: rgba(255, 204, 0, 0.05);
-            opacity: 1;
+        .btn-variable:hover { border-color: var(--accent); background: rgba(255, 204, 0, .05); opacity: 1; }
+        .btn-variable.active { background: rgba(255, 204, 0, .15) !important; border-color: var(--accent) !important; color: #fff !important; opacity: 1 !important; }
+        .path-helper-btns.has-active .btn-variable:not(.active) { opacity: .4; }
+
+        .section-title {
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            color: var(--accent);
+            font-weight: 700;
+            margin: 18px 0 10px;
         }
 
-        /* Класс для выбранной (активной) переменной */
-        .btn-variable.active {
-            background-color: rgba(255, 204, 0, 0.15) !important;
-            border-color: #ffcc00 !important;
-            color: #ffffff !important; /* Текст становится белым и ярким */
-            opacity: 1 !important;
-            box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
+        .data-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .usage { font-size: .78rem; color: var(--muted); }
+
+        #status {
+            margin-top: 12px;
+            font-size: .85rem;
+            min-height: 22px;
         }
 
-        /* Класс для остальных кнопок, когда есть активная */
-        .path-helper-btns.has-active .btn-variable:not(.active) {
-            opacity: 0.4; /* Затухшие кнопки */
-        }
+        #status.ok { color: var(--green); }
+        #status.err { color: var(--red); }
 
-        .path-helper-btns.has-active .btn-variable:not(.active):hover {
-            opacity: 0.7; /* Чуть ярче при наведении, но все равно затухшие */
+        .brand-footer {
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+            font-size: .75rem;
+            color: #62626a;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
         }
-
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Настройки приложения</h1>
-    <hr>
+    <h1>Yandex Music Fisher</h1>
+    <div class="subtitle">mod by vectorserver • настройки v3</div>
+
     <p>
         Благодарности сюда:
-        <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250">💰 yoomoney</a>
+        <a target="_blank" rel="noopener" href="https://yoomoney.ru/to/410011249842897/250">💰 yoomoney</a>
     </p>
 
-    <form class="form" id="settingsForm">
-        <div class="mb-3">
-            <label for="coverResolution">Разрешение обложки:</label>
-            <select class="form-select" id="coverResolution">
-                <option value="200">200x200</option>
-                <option value="400">400x400</option>
-                <option selected value="600">600x600</option>
-                <option value="800">800x800</option>
-                <option value="1000">1000x1000</option>
-            </select>
-        </div>
+    <hr>
+
+    <form id="settingsForm" novalidate>
+        <div class="section-title">Загрузка</div>
 
         <div class="mb-3">
-            <label for="audioQuality">Качество звука:</label>
-            <select class="form-select" id="audioQuality">
-                <option value="lq">Низкое</option>
-                <option value="nq">Среднее</option>
-                <option selected value="lossless">Высокое (Lossless)</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="downlodadCount">Кол-во треков за раз:</label>
-            <select class="form-select" id="downlodadCount">
-                <option value="2">2 трека</option>
-                <option selected value="4">4 трека</option>
-                <option value="6">6 треков</option>
-                <option value="8">8 треков</option>
-            </select>
-            <code style="font-size: 11px; display: block; margin-top: 4px;">
-                Единовременная закачка за один проход
-            </code>
-        </div>
-
-        <div class="mb-3">
-            <label for="downloadFolder">Папка для загрузки:</label>
-            <input required class="form-control" value="music/" type="text" id="downloadFolder"
-                   placeholder="Например: music/%dir%/%genre%/%year%/%artist%/%album%"/>
-
-            <!-- Кнопки выбора пути под полем ввода -->
+            <label class="field-label" for="downloadFolder">Папка для загрузки:</label>
+            <input class="form-control" type="text" id="downloadFolder" value="music/"
+                   placeholder="music/%genre%/%year%/%artist%/%album%">
             <div class="path-helper-btns">
                 <button type="button" class="btn-variable" data-var="%genre%">+ Жанр</button>
                 <button type="button" class="btn-variable" data-var="%year%">+ Год</button>
@@ -238,63 +209,136 @@
                 <button type="button" class="btn-variable" data-var="%first_artist%">+ Первый артист</button>
                 <button type="button" class="btn-variable" data-var="%album%">+ Альбом</button>
             </div>
-
-            <!-- Развернутые мини-описания к переменным -->
-            <div class="variables-highlight" style="font-size: 11px; margin-top: 12px; line-height: 1.6;">
-                <code style="font-weight: bold; color: #ffffff !important;">Переменные для путей:</code>
-                <div style="margin-top: 4px; padding-left: 4px;">
-                    <code>%genre%</code> — Основной жанр релиза (например: Pop, Rock, Rap).<br>
-                    <code>%year%</code> — Год официального выпуска альбома или сингла.<br>
-                    <code>%artist%</code> — Полный список всех исполнителей трека через запятую.<br>
-                    <code>%first_artist%</code> — Имя только самого первого (главного) артиста.<br>
-                    <code>%album%</code> — Официальное название альбома, микстейпа или EP.
+            <div class="variables-highlight" style="font-size:.74rem;margin-top:12px;line-height:1.7;">
+                <code style="color:#fff !important;font-weight:700;">Переменные для путей:</code>
+                <div style="margin-top:4px;padding-left:4px;">
+                    <code>%genre%</code> — жанр релиза.<br>
+                    <code>%year%</code> — год выпуска.<br>
+                    <code>%artist%</code> — все исполнители через запятую.<br>
+                    <code>%first_artist%</code> — основной исполнитель.<br>
+                    <code>%album%</code> — название альбома.
                 </div>
-                <div style="color: #797984; margin-top: 6px; font-style: italic;">
-                    * Если указать music без переменных, закачка идет стандартно согласно текущему плейлисту.
+                <div style="color:#797984;margin-top:6px;font-style:italic;">
+                    * Без переменных файлы складываются в базовую папку + имя плейлиста/альбома.
                 </div>
             </div>
         </div>
 
-        <div class="form-check form-switch mb-3 mt-3">
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="field-label" for="audioQuality">Качество звука:</label>
+                <select class="form-select" id="audioQuality">
+                    <option value="lq">Низкое</option>
+                    <option value="nq">Среднее</option>
+                    <option value="lossless">Высокое (Lossless)</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="field-label" for="coverResolution">Разрешение обложки:</label>
+                <select class="form-select" id="coverResolution">
+                    <option value="200">200×200</option>
+                    <option value="300">300×300</option>
+                    <option value="400">400×400</option>
+                    <option value="600">600×600</option>
+                    <option value="800">800×800</option>
+                    <option value="1000">1000×1000</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="field-label" for="maxConcurrent">Параллельных загрузок:</label>
+                <select class="form-select" id="maxConcurrent">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="field-label" for="maxAttempts">Повторов при ошибке:</label>
+                <select class="form-select" id="maxAttempts">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="field-label" for="coverMaxBytes">Максимальный вес обложки в ID3:</label>
+            <select class="form-select" id="coverMaxBytes">
+                <option value="150000">150 КБ (сильно сжимать)</option>
+                <option value="250000">250 КБ (рекомендуется)</option>
+                <option value="500000">500 КБ</option>
+                <option value="1000000">1 МБ</option>
+            </select>
+            <span class="hint">Если обложка тяжелее — она ресайзится и сжимается через OffscreenCanvas.</span>
+        </div>
+
+        <div class="section-title">Метаданные и поведение</div>
+
+        <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="writeId3">
+            <label class="form-check-label" for="writeId3">Записывать теги (MP3 ID3v2 / FLAC Vorbis Comment)</label>
+            <span class="hint">Заголовок, исполнитель, альбом, год, номер трека, жанр и обложка. Для FLAC используется нативный Vorbis Comment + Picture.</span>
+        </div>
+
+        <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="resumeEnabled">
+            <label class="form-check-label" for="resumeEnabled">Докачка при обрыве (HTTP Range + чанки)</label>
+            <span class="hint">Прерванная загрузка продолжится с последнего сохранённого чанка.</span>
+        </div>
+
+        <div class="form-check form-switch mb-3">
             <input class="form-check-input" type="checkbox" id="numberingTracks">
-            <label class="form-check-label" for="numberingTracks">
-                Нумеровать имена треков
-            </label>
-            <div style="font-size: 11px; color: #ffcc00; margin-top: 2px; opacity: 0.85;">
-                ⚠️ Внимание: работает только при скачивании альбомов (согласно порядку треков в релизе).
-            </div>
-            <code id="trackExample" class="music_nuber_name" style="font-size: 11px; margin-top: 6px;">
-                music_name.mp3
-            </code>
+            <label class="form-check-label" for="numberingTracks">Нумеровать имена треков</label>
+            <code id="trackExample" class="music_nuber_name">music_name.mp3</code>
         </div>
 
-
-        <div class="mb-4">
-            <label for="savehistory">Сохранять историю в менеджере загрузок:</label>
+        <div class="mb-3">
+            <label class="field-label" for="savehistory">Сохранять в менеджере загрузок браузера:</label>
             <select class="form-select" id="savehistory">
                 <option value="1">Да</option>
-                <option selected value="0">Нет</option>
+                <option value="0">Нет (удалять по завершении)</option>
             </select>
+            <span class="hint">История расширения ведётся всегда — это отдельная IndexedDB.</span>
         </div>
 
         <div class="form-check form-switch mb-4">
             <input class="form-check-input" type="checkbox" id="aiSuspicion">
-            <label class="form-check-label" for="aiSuspicion">
-                Пропускать треки ИИ
-            </label>
-            <br>
-            <code style="font-size: 11px; display: block; margin-top: 4px; color: #797984;">
-                Ставит дизлайки треку и пропускает....
-            </code>
+            <label class="form-check-label" for="aiSuspicion">Пропускать треки с использованием ИИ</label>
+            <span class="hint">Ставит дизлайк и переключает на следующий трек.</span>
         </div>
 
-        <button class="btn btn-dark" type="submit">Сохранить настройки</button>
+        <button class="btn-main" type="submit">Сохранить настройки</button>
+        <div id="status"></div>
     </form>
 
     <hr>
+
+    <div class="section-title">Данные</div>
+    <div class="data-actions">
+        <button id="clearHistoryBtn" class="btn-ghost" type="button">Очистить завершённую историю</button>
+        <button id="wipeBtn" class="btn-danger-soft" type="button">Удалить все данные расширения</button>
+        <span id="usage" class="usage">Занято: —</span>
+    </div>
+    <span class="hint">
+        «Удалить все данные» очищает IndexedDB (история, очередь, чанки, кэш обложек) и снапшот страницы.
+    </span>
+
+    <div class="brand-footer">
+        <span>Yandex Music Fisher mod by vectorserver</span>
+        <a target="_blank" rel="noopener" href="https://vk.com/vectorserver">Vectorserver</a>
+    </div>
 </div>
 
-<!-- Подключение внешнего JS файла -->
-<script src="../js/options.js" defer></script>
+<script type="module" src="../js/options.js"></script>
 </body>
 </html>

@@ -2,252 +2,585 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=500">
-    <title>NEXT Yandex Music Fisher mod by vectorserver</title>
-    <!-- Bootstrap CSS -->
+    <meta name="viewport" content="width=520">
+    <title>Yandex Music Fisher mod by vectorserver</title>
+    <!-- Yandex Music Fisher mod by vectorserver -->
     <link href="../html/bs5/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Компактный и современный темный стиль */
+        :root {
+            --bg: #121214;
+            --panel: #18181c;
+            --card: #202024;
+            --line: #2e2e35;
+            --text: #e1e1e6;
+            --muted: #a8a8b3;
+            --accent: #ffcc00;
+            --green: #00eb84;
+            --red: #ff5252;
+            --blue: #3b82f6;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            background-color: #121214;
-            color: #e1e1e6;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 8px;
+            width: 520px;
             margin: 0;
-            overflow: hidden; /* Убирает глобальный скроллбары */
+            padding: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
         }
 
-        .container-fluid {
-            width: 500px;
-            max-width: 500px;
-            background: #18181c;
-            border-radius: 12px;
-            padding: 12px 14px 10px 14px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        .hidden { display: none !important; }
+
+        .app {
+            background: var(--panel);
             border: 1px solid #29292e;
-        }
-
-        /* Исправленная левая карточка с Flexbox распределением */
-        .card {
-            background: #202024 !important;
-            border: 1px solid #2e2e35 !important;
-            border-radius: 10px !important;
-            padding: 10px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+            padding: 12px 14px 10px;
+            max-height: 600px;
             display: flex;
             flex-direction: column;
-            height: 90%;
         }
 
-        .card-body {
-            padding: 4px 0 0 0 !important;
+        .app-header {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             justify-content: space-between;
-            flex-grow: 1; /* Заставляет контент занять всё свободное место, двигая кнопку вниз */
+            margin-bottom: 10px;
         }
 
-        /* Правая панель плейлиста */
-        #playlistPanel {
-            background: #202024 !important;
-            border: 1px solid #2e2e35 !important;
-            border-radius: 10px !important;
-            padding: 10px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            height: 100%;
+        .brand {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.1;
+            letter-spacing: .2px;
         }
 
-        .img-fluid {
-            border-radius: 6px !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-            max-height: 155px; /* Чуть уменьшили для идеального баланса высоты колонок */
-            width: 100%;
-            object-fit: cover;
-        }
-
-        /* Заголовки и текст */
-        strong, h1, h5, #playlistPanelTitle {
-            color: #ffffff;
-            font-weight: 600;
-        }
-
-        strong {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.8rem;
+        .brand-sub {
+            font-size: .7rem;
+            color: var(--muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #a8a8b3;
+            letter-spacing: .6px;
         }
 
-        .text-muted {
-            color: #a8a8b3 !important;
+        .icon-btn {
+            background: var(--card);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            width: 34px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
-        /* Кнопки */
-        .btn-warning, .btn-dark {
-            background-color: #ffcc00 !important;
-            border-color: #ffcc00 !important;
-            color: #121214 !important;
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .ver {
+            font-size: .7rem;
+            color: var(--green);
+            background: rgba(0, 235, 132, .1);
+            border-radius: 999px;
+            padding: 3px 8px;
             font-weight: 600;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 0.85rem;
         }
 
-        .btn-warning:hover, .btn-dark:hover {
-            background-color: #e6b800 !important;
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+        .notice {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: .9rem;
         }
 
-        .btn-outline-primary {
-            color: #ff5252;
-            border-color: #ff5252;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            padding: 5px;
+        .notice h2 { font-size: 1.05rem; color: #fff; margin: 0 0 8px; }
+
+        .tabs {
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 10px;
+            gap: 4px;
         }
 
-        .btn-outline-primary:hover {
-            background-color: #ff5252;
+        .tab-link {
+            background: transparent;
+            border: 0;
+            border-bottom: 2px solid transparent;
+            color: var(--muted);
+            padding: 8px 10px;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-link.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .pill {
+            background: var(--line);
             color: #fff;
+            border-radius: 999px;
+            font-size: .68rem;
+            padding: 1px 7px;
+            min-width: 18px;
+            text-align: center;
         }
 
-        .btn-outline-secondary {
-            color: #a8a8b3;
-            border-color: #2e2e35;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            padding: 5px;
+        .tab-link.active .pill { background: rgba(255, 204, 0, .18); color: var(--accent); }
+
+        .tab-pane { display: none; overflow-y: auto; max-height: 470px; padding-right: 2px; }
+        .tab-pane.active { display: block; }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: stretch;
+            margin-bottom: 10px;
         }
 
-        .btn-outline-secondary:hover {
-            background-color: #2e2e35;
+        .top-grid.single { grid-template-columns: 1fr; }
+
+        .track-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: stretch;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 0;
+            min-width: 0;
+        }
+
+        .track-card img {
+            width: 100%;
+            height: 132px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--line);
+            flex: 0 0 132px;
+        }
+
+        .track-info { flex: 1 1 auto; min-width: 0; width: 100%; }
+
+        .track-title {
+            font-weight: 700;
             color: #fff;
+            font-size: .9rem;
+            margin-bottom: 2px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            min-height: 2.3em;
         }
 
-        /* Ползунки инпутов */
-        input[type="range"] {
-            accent-color: #007acc;
+        .track-card .btn-accent { width: 100%; }
+
+        /* Если пакетной загрузки нет — карточка трека занимает всю ширину */
+        .top-grid.single .track-card {
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-grid.single .track-card img {
+            width: 74px;
+            height: 74px;
+            flex: 0 0 74px;
+        }
+
+        .top-grid.single .track-title { min-height: 0; -webkit-line-clamp: 1; }
+
+        .top-grid.single .track-card .btn-accent { width: auto; margin-left: auto; }
+
+        .muted { color: var(--muted) !important; }
+        .small { font-size: .78rem; }
+
+        .btn-accent {
+            background: var(--accent);
+            border: 0;
+            color: #121214;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: .82rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-accent:hover { background: #e6b800; }
+        .btn-accent:disabled { opacity: .45; cursor: default; }
+
+        .btn-ghost {
+            background: var(--card);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: .78rem;
+            cursor: pointer;
+        }
+
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel .btn-accent { margin-top: auto; }
+
+        .panel-head { display: flex; gap: 8px; margin-bottom: 6px; }
+
+        .panel-head img {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--line);
+            flex: 0 0 56px;
+        }
+
+        .panel-title {
+            font-weight: 700;
+            color: #fff;
+            font-size: .82rem;
+            line-height: 1.25;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .range-wrap { margin: 6px 0 8px; }
+
+        .range-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            font-size: .7rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .range-row b { color: var(--accent); text-align: right; }
+
+        .range-inputs { display: flex; gap: 6px; margin-bottom: 4px; }
+
+        .range-inputs label {
+            flex: 1 1 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: .66rem;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .range-inputs input {
+            width: 100%;
+            min-width: 0;
+            background: #121214;
+            border: 1px solid var(--line);
+            color: #fff;
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: .78rem;
+        }
+
+        .range-inputs input:focus { outline: none; border-color: var(--accent); }
+
+        .range-sliders label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .66rem;
+            color: var(--muted);
+            margin: 2px 0;
+        }
+
+        .range-sliders input[type="range"] {
+            flex: 1;
+            min-width: 0;
+            accent-color: var(--accent);
             height: 4px;
         }
 
-        /* Технические блоки и футер */
-        code {
-            color: #62626a !important;
-            font-size: 0.75rem;
-            display: inline-block;
+        .range-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
             margin-top: 4px;
-            margin-right: 10px;
         }
 
-        code a {
-            color: #ffcc00;
-            text-decoration: none;
+        .range-actions .btn-ghost { padding: 3px 8px; font-size: .68rem; }
+
+        #rangeHint { line-height: 1.25; }
+
+        .queue-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 2px 8px;
+            font-size: .78rem;
         }
 
-        #tokenEnd {
-            color: #ff5252 !important;
+        .queue-actions { display: flex; gap: 4px; }
+
+        .job-list, .history-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .job, .hist-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px;
         }
 
-        #appv {
-            color: #00eb84;
-            font-weight: bold;
-        }
+        .job { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; }
+        .job-title { font-size: .82rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .job-actions { display: flex; gap: 4px; }
 
-        pre {
+        .progress {
+            grid-column: 1 / -1;
+            height: 4px;
             background: #121214;
-            color: #00eb84;
-            padding: 6px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            border: 1px solid #2e2e35;
-            max-height: 55px;
-            margin-bottom: 6px;
-            overflow-y: auto;
+            border-radius: 999px;
+            overflow: hidden;
         }
+
+        .progress > span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+        .progress.error > span { background: var(--red); }
+        .progress.done > span { background: var(--green); }
+
+        .hist-card { display: flex; gap: 8px; align-items: flex-start; }
+
+        .hist-card img {
+            width: 46px;
+            height: 46px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: var(--line);
+            flex: 0 0 46px;
+        }
+
+        .hist-body { flex: 1 1 auto; min-width: 0; }
+
+        .hist-title { font-size: .84rem; color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-sub { font-size: .74rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: .7rem; color: var(--muted); margin-top: 3px; align-items: center; }
+
+        .badge-status {
+            border-radius: 999px;
+            padding: 1px 7px;
+            font-size: .66rem;
+            font-weight: 700;
+            background: var(--line);
+            color: #fff;
+        }
+
+        .badge-status.done { background: rgba(0, 235, 132, .15); color: var(--green); }
+        .badge-status.error { background: rgba(255, 82, 82, .15); color: var(--red); }
+        .badge-status.downloading, .badge-status.tagging, .badge-status.saving { background: rgba(255, 204, 0, .15); color: var(--accent); }
+        .badge-status.paused { background: rgba(59, 130, 246, .15); color: #7ea8ff; }
+
+        .hist-actions { display: flex; flex-direction: column; gap: 4px; }
+        .hist-actions button { padding: 4px 7px; font-size: .7rem; }
+
+        .history-tools { display: grid; grid-template-columns: 1fr 110px 110px; gap: 6px; margin-bottom: 8px; }
+
+        .history-tools input, .history-tools select {
+            background: var(--card);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 7px 9px;
+            font-size: .8rem;
+            min-width: 0;
+        }
+
+        .history-tools input:focus, .history-tools select:focus { outline: none; border-color: var(--accent); }
+
+        .history-actions-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+
+        .app-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+            font-size: .68rem;
+            color: #62626a;
+        }
+
+        .app-footer a { color: var(--accent); text-decoration: none; }
+        .app-footer a:hover { text-decoration: underline; }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 14px;
+            transform: translateX(-50%) translateY(20px);
+            background: #29292e;
+            color: #fff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: .8rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all .25s;
+            z-index: 100;
+            max-width: 460px;
+            text-align: center;
+        }
+
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #toast.ok { border-color: var(--green); }
+        #toast.err { border-color: var(--red); }
     </style>
-
-
 </head>
 <body>
-<section class="container-fluid">
-    <div style="display: none;" id="authorization">
-        <div class="row justify-content-center">
-            <div class="col-md-6 m-5">
-                <div class="panel text-center">
-                    <h1>NEXT Yandex Music Fisher</h1>
-                    <p>Для использования приложения нужна авторизация для доступа к методам Яндекс Музыки.</p>
-                    <a target="_blank" href="#" class="btn btn-warning" id="authorize">>>> Авторизация <<< </a>
-                    <p>v: <span id="appvLogin">2.1.30</span></p>
-                </div>
-            </div>
+<section class="app">
+    <header class="app-header">
+        <div>
+            <div class="brand">Yandex Music Fisher</div>
+            <div class="brand-sub">mod by vectorserver</div>
         </div>
+        <div class="d-flex align-items-center gap-2">
+            <span id="appVersion" class="ver">3.0</span>
+            <button id="openSettings" class="icon-btn" title="Настройки" type="button">⚙</button>
+        </div>
+    </header>
+
+    <div id="loading" class="notice">Загрузка данных…</div>
+
+    <div id="authPanel" class="notice hidden">
+        <h2>Нужна авторизация</h2>
+        <p>Для доступа к методам Яндекс.Музыки войдите в аккаунт.</p>
+        <a id="authorize" class="btn-accent" target="_blank" rel="noopener" href="#">Авторизоваться</a>
+        <p id="authHint" class="muted small mt-2 mb-0"></p>
     </div>
-    <div style="display: none;" id="work_panel">
-        <div class="row">
-            <div class="col-12"> </div>
-            <div id="col1" class="col-6">
-                <strong>Текущий трек</strong>
-                <div id="trackPanel" class="card" style="width: 100%;">
-                    <img id="trackImage" src="../icons/music_by_pancaza.png" class="card-img-top img-fluid"
-                         alt="Track Image">
-                    <div class="card-body p-2">
-                        <h5 id="trackName" class="text-center mt-2 fs-6">Track Info</h5>
-                        <p id="artistsList" class="text-center text-muted small mb-2">No track information available</p>
-                        <div class="d-grid gap-2">
-                            <a id="downloadButton" href="#" class="btn btn-dark btn-sm">Скачать</a>
+
+    <div id="mainPanel" class="hidden">
+        <div class="tabs">
+            <button class="tab-link active" type="button" data-tab="active">
+                Активные <span id="activeCount" class="pill">0</span>
+            </button>
+            <button class="tab-link" type="button" data-tab="history">
+                История <span id="historyCount" class="pill">0</span>
+            </button>
+        </div>
+
+        <div class="tab-pane active" id="tabActive">
+            <div id="noTrack" class="notice hidden">Включите трек в Яндекс.Музыке и вернитесь сюда.</div>
+
+            <div id="topGrid" class="top-grid hidden">
+                <div id="trackCard" class="track-card hidden">
+                    <img id="trackImage" src="../icons/music_by_pancaza.png" alt="Обложка трека">
+                    <div class="track-info">
+                        <div id="trackName" class="track-title">—</div>
+                        <div id="artistsList" class="muted small">—</div>
+                        <div id="trackAlbum" class="muted small">—</div>
+                    </div>
+                    <button id="downloadButton" class="btn-accent" type="button">Скачать</button>
+                </div>
+
+                <div id="playlistPanel" class="panel hidden">
+                    <div class="panel-head">
+                        <img id="playlistPanelImage" src="../icons/music_by_pancaza.png" alt="Обложка">
+                        <div style="min-width:0;">
+                            <div id="playlistPanelTitle" class="panel-title">—</div>
+                            <div id="playlistPanelMeta" class="muted small">—</div>
                         </div>
                     </div>
+                    <div id="rangeWrapper" class="range-wrap hidden">
+                        <div class="range-row"><span>Выбрано треков:</span><b id="rangeValueDisplay">—</b></div>
+                        <div class="range-inputs">
+                            <label>С <input type="number" id="rangeStartNum" min="1" step="1" value="1" inputmode="numeric"></label>
+                            <label>По <input type="number" id="rangeEndNum" min="1" step="1" value="1" inputmode="numeric"></label>
+                        </div>
+                        <div id="rangeSliders" class="range-sliders">
+                            <label>От <input type="range" id="rangeStart" min="1" step="1" value="1"></label>
+                            <label>До <input type="range" id="rangeEnd" min="1" step="1" value="1"></label>
+                        </div>
+                        <div class="range-actions">
+                            <span id="rangeHint" class="muted small"></span>
+                            <button id="rangeAll" class="btn-ghost" type="button">Все</button>
+                        </div>
+                    </div>
+                    <button id="playlistPanelMetaDownloadBtn" class="btn-accent w-100" type="button">Скачать выбранное</button>
                 </div>
             </div>
-            <div id="col2" class="col-6">
-                <div id="playlistPanel" style="width: 100%;">
-                    <strong id="playlistPanelTitle">Плейлист</strong>
-                    <img id="playlistPanelImage" src="../icons/music_by_pancaza.png" class="card-img-top img-fluid"
-                         alt="Track Image">
-                    <pre id="playlistPanelMeta"></pre>
-                    <div>
-                        <button id="playlistPanelMetaDownloadBtn" style="display: none;" href="#" class="btn btn-dark btn-sm text-center position-relative">
-                            <span class="text">...</span>
-                            <span class="counter position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
-                        </button>
-                    </div>
 
-                    <div id="playlistPanelMetaotherData"></div>
+            <div class="queue-toolbar">
+                <span id="queueStats" class="muted">Очередь пуста</span>
+                <div class="queue-actions">
+                    <button id="pauseAll" class="btn-ghost" type="button" title="Пауза/продолжить">⏸</button>
+                    <button id="retryAll" class="btn-ghost" type="button" title="Повторить ошибки">↻</button>
+                    <button id="stopAll" class="btn-ghost" type="button" title="Остановить всё">⏹</button>
                 </div>
             </div>
 
-            <div class="col-12 mt-3">
+            <div id="activeList" class="job-list"></div>
+        </div>
 
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <a target="_blank" href="https://yoomoney.ru/to/410011249842897/250" class="btn btn-outline-primary w-100 btn-sm">
-                            💰 Donat
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="#" id="open-settings" class="btn btn-outline-secondary w-100 btn-sm">
-                            ⚙️ Настройки
-                        </a>
-                    </div>
-                </div>
-
-                <code>
-                    By: <a target="_blank" href="https://vk.com/vectorserver">Vectorserver</a>
-                </code>
-                <code>
-                    Token end: <code id="tokenEnd" style="display:inline;"></code> <a id="tokenEndUrl" href="#">UP</a> | version: <span id="appv">2.1.30</span>
-                </code>
-
+        <div class="tab-pane" id="tabHistory">
+            <div class="history-tools">
+                <input id="historySearch" type="search" placeholder="Поиск: трек, артист, альбом…">
+                <select id="historyStatus">
+                    <option value="">Все статусы</option>
+                    <option value="done">Готово</option>
+                    <option value="error">Ошибка</option>
+                    <option value="queued">В очереди</option>
+                    <option value="downloading">Загрузка</option>
+                    <option value="paused">Пауза</option>
+                </select>
+                <select id="historyType">
+                    <option value="">Все типы</option>
+                    <option value="album">Альбом</option>
+                    <option value="playlist">Плейлист</option>
+                    <option value="artist">Артист</option>
+                    <option value="chart">Чарт</option>
+                    <option value="track">Трек</option>
+                </select>
             </div>
+
+            <div class="history-actions-bar">
+                <span id="historyStats" class="muted small">—</span>
+                <button id="clearHistory" class="btn-ghost" type="button">Очистить завершённые</button>
+            </div>
+
+            <div id="historyList" class="history-list"></div>
         </div>
     </div>
+
+    <footer class="app-footer">
+        <span>Yandex Music Fisher mod by vectorserver</span>
+        <a id="tokenEndUrl" href="#">сбросить токен</a>
+    </footer>
 </section>
-<!-- Bootstrap JS Bundle -->
-<script src="../html/bs5/browser-id3-writer.6.0.0.mjs"></script>
-<script src="../html/bs5/bootstrap.bundle.min.js"></script>
-<script src="../js/parser.js?v=2.1.47" defer></script>
-<script src="../js/popup.js?v=2.1.47" defer></script>
+
+<div id="toast"></div>
+
+<script type="module" src="../js/popup.js"></script>
 </body>
 </html>

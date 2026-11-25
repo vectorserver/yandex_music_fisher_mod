@@ -1,8 +1,8 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Yandex Music Fisher mod by vectorserver",
-  "version": "2.1.50",
-  "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
+  "version": "3.0.0",
+  "description": "Скачивание музыки с Яндекс.Музыки: ID3-теги, история, докачка и умная очередь. Yandex Music Fisher mod by vectorserver",
   "icons": {
     "128": "icons/music_by_pancaza.png"
   },
@@ -13,39 +13,48 @@
   },
   "background": {
     "scripts": ["js/service_worker.js"],
-    "persistent": false
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://api.music.yandex.ru/*",
-        "https://next.music.yandex.com/*",
-        "https://next.music.yandex.kz/*",
-        "https://next.music.yandex.by/*",
-        "https://next.music.yandex.uz/*",
-        "https://*.strm.yandex.net/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.com/*",
         "https://music.yandex.kz/*",
         "https://music.yandex.by/*",
-        "https://music.yandex.uz/*",
-        "https://yastatic.net/*"
+        "https://music.yandex.uz/*"
       ],
-      "js": ["js/content.js"]
+      "js": ["js/content.js"],
+      "run_at": "document_start"
     }
   ],
   "permissions": [
     "tabs",
     "downloads",
-    "webRequest",
     "scripting",
-    "activeTab",
-    "storage"
+    "storage",
+    "alarms",
+    "unlimitedStorage",
+    "activeTab"
   ],
   "host_permissions": [
-    "https://*.music.yandex.ru/*"
+    "https://music.yandex.ru/*",
+    "https://music.yandex.com/*",
+    "https://music.yandex.kz/*",
+    "https://music.yandex.by/*",
+    "https://music.yandex.uz/*",
+    "https://api.music.yandex.ru/*",
+    "https://*.strm.yandex.net/*",
+    "https://*.storage.yandex.net/*",
+    "https://*.yandex.net/*"
   ],
   "incognito": "split",
   "options_page": "html/options.html",
-  "homepage_url": "https://vk.com/vectorserver"
+  "homepage_url": "https://vk.com/vectorserver",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "yandex-music-fisher@vectorserver",
+      "strict_min_version": "115.0"
+    }
+  }
 }

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Yandex Music Fisher mod by vectorserver",
-  "version": "2.1.50",
-  "description": "Скачивание музыки с сервисов Яндекс.Музыка и Яндекс.Радио",
+  "version": "3.0.0",
+  "description": "Скачивание музыки с Яндекс.Музыки: ID3-теги, история, докачка и умная очередь. Yandex Music Fisher mod by vectorserver",
   "icons": {
     "128": "icons/music_by_pancaza.png"
   },
@@ -12,39 +12,57 @@
     "default_title": "Yandex Music Fisher mod by vectorserver"
   },
   "background": {
-    "service_worker": "js/service_worker.js"
+    "service_worker": "js/service_worker.js",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://api.music.yandex.ru/*",
-        "https://*.strm.yandex.net/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.com/*",
         "https://music.yandex.kz/*",
         "https://music.yandex.by/*",
-        "https://music.yandex.uz/*",
-        "https://yastatic.net/*"
+        "https://music.yandex.uz/*"
       ],
-      "js": ["js/content.js"]
+      "js": ["js/main_hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://music.yandex.ru/*",
+        "https://music.yandex.com/*",
+        "https://music.yandex.kz/*",
+        "https://music.yandex.by/*",
+        "https://music.yandex.uz/*"
+      ],
+      "js": ["js/content.js"],
+      "run_at": "document_start"
     }
   ],
   "permissions": [
     "tabs",
     "downloads",
-    "webRequest",
     "scripting",
-    "activeTab",
-    "declarativeNetRequest",
-    "storage"
+    "storage",
+    "alarms",
+    "offscreen",
+    "unlimitedStorage",
+    "activeTab"
   ],
   "host_permissions": [
-    "https://*.music.yandex.ru/*",
+    "https://music.yandex.ru/*",
+    "https://music.yandex.com/*",
+    "https://music.yandex.kz/*",
+    "https://music.yandex.by/*",
+    "https://music.yandex.uz/*",
+    "https://api.music.yandex.ru/*",
+    "https://*.strm.yandex.net/*",
     "https://*.storage.yandex.net/*",
-    "https://*.strm.yandex.net/*"
+    "https://*.yandex.net/*"
   ],
   "incognito": "split",
   "options_page": "html/options.html",
   "homepage_url": "https://github.com/vectorserver/yandex_music_fisher_mod",
-  "update_url": "https://github.com/vectorserver/yandex_music_fisher_mod/update/"
+  "minimum_chrome_version": "111"
 }
